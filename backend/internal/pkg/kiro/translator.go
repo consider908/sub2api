@@ -17,6 +17,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/Wei-Shaw/sub2api/internal/pkg/anthropictokenizer"
 	"github.com/google/uuid"
 	"github.com/tidwall/gjson"
 )
@@ -967,7 +968,7 @@ func StreamEventStreamAsAnthropicWithContext(ctx context.Context, body io.Reader
 		return nil, err
 	}
 	if usage.OutputTokens == 0 {
-		if est := estimateOutputTokens(outputTextBuf.String()); est > 0 {
+		if est := anthropictokenizer.CountTokens(outputTextBuf.String()); est > 0 {
 			usage.OutputTokens = est
 		}
 	}
@@ -1918,7 +1919,7 @@ func parseEventStream(body io.Reader) (string, []KiroToolUse, Usage, string, err
 				outputBuf.Write(b)
 			}
 		}
-		if est := estimateOutputTokens(outputBuf.String()); est > 0 {
+		if est := anthropictokenizer.CountTokens(outputBuf.String()); est > 0 {
 			usage.OutputTokens = est
 		}
 	}
@@ -2959,27 +2960,6 @@ func readStopReason(m map[string]interface{}) string {
 		return stop
 	}
 	return getString(m, "stopReason")
-}
-
-// estimateOutputTokens estimates token count from output text.
-// Chinese characters count as ~1.5 chars/token, others as ~4 chars/token.
-func estimateOutputTokens(text string) int {
-	if text == "" {
-		return 0
-	}
-	var chinese, other int
-	for _, r := range text {
-		if r >= 0x4E00 && r <= 0x9FFF {
-			chinese++
-		} else {
-			other++
-		}
-	}
-	tokens := (chinese*2+2)/3 + (other+3)/4
-	if tokens == 0 {
-		return 1
-	}
-	return tokens
 }
 
 func toInt(value interface{}) (int, bool) {
