@@ -1,0 +1,141 @@
+name: Sync Upstream
+
+on:
+  schedule:
+    # 每天 UTC 22:00 同步一次上游
+    - cron: '0 22 * * *'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: '强制同步（使用 force push 覆盖本地分支）'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+env:
+  UPSTREAM_REPO: https://github.com/Wei-Shaw/sub2api.git
+
+jobs:
+  sync-branch:
+    name: 同步上游默认分支
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Add upstream remote
+        run: |
+          git remote add upstream "${UPSTREAM_REPO}"
+          git remote -v
+
+      - name: Fetch upstream
+        run: |
+          git fetch upstream --prune
+
+      - name: Sync default branch
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          FORCE_SYNC: ${{ github.event.inputs.force }}
+        run: |
+          set -e
+          echo "默认分支: ${DEFAULT_BRANCH}"
+
+          # 检查上游是否有该分支
+          if ! git show-ref --verify --quiet "refs/remotes/upstream/${DEFAULT_BRANCH}"; then
+            echo "上游不存在分支 ${DEFAULT_BRANCH}，跳过分支同步"
+            exit 0
+          fi
+
+          git checkout "${DEFAULT_BRANCH}"
+
+          UPSTREAM_SHA=$(git rev-parse "upstream/${DEFAULT_BRANCH}")
+          LOCAL_SHA=$(git rev-parse "${DEFAULT_BRANCH}")
+          echo "本地: ${LOCAL_SHA}"
+          echo "上游: ${UPSTREAM_SHA}"
+
+          if [ "${LOCAL_SHA}" = "${UPSTREAM_SHA}" ]; then
+            echo "本地分支已经与上游同步，无需操作"
+            exit 0
+          fi
+
+          if [ "${FORCE_SYNC}" = "true" ]; then
+            echo "强制同步：使用 reset --hard 并 force push"
+            git reset --hard "upstream/${DEFAULT_BRANCH}"
+            git push --force-with-lease origin "${DEFAULT_BRANCH}"
+          else
+            # 尝试 fast-forward 合并
+            if git merge --ff-only "upstream/${DEFAULT_BRANCH}"; then
+              echo "Fast-forward 合并成功"
+              git push origin "${DEFAULT_BRANCH}"
+            else
+              echo "::warning::无法 fast-forward 合并到上游，可能存在本地修改。如需强制覆盖请手动触发并启用 force 选项。"
+              exit 1
+            fi
+          fi
+
+  sync-tags:
+    name: 同步上游 Tags
+    runs-on: ubuntu-latest
+    needs: sync-branch
+    if: always()
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Add upstream remote
+        run: |
+          git remote add upstream "${UPSTREAM_REPO}"
+
+      - name: Fetch upstream tags
+        run: |
+          git fetch upstream --tags --prune --prune-tags --force
+
+      - name: Push new tags to origin
+        run: |
+          set -e
+          # 列出上游所有 tag
+          UPSTREAM_TAGS=$(git ls-remote --tags upstream | awk '{print $2}' | sed 's|refs/tags/||' | grep -v '\^{}$' || true)
+
+          # 列出 origin（fork）所有 tag
+          ORIGIN_TAGS=$(git ls-remote --tags origin | awk '{print $2}' | sed 's|refs/tags/||' | grep -v '\^{}$' || true)
+
+          NEW_TAGS=$(comm -23 <(echo "${UPSTREAM_TAGS}" | sort -u) <(echo "${ORIGIN_TAGS}" | sort -u) || true)
+
+          if [ -z "${NEW_TAGS}" ]; then
+            echo "没有需要同步的新 tag"
+            exit 0
+          fi
+
+          echo "发现新 tag："
+          echo "${NEW_TAGS}"
+
+          # 推送每个新 tag 到 origin
+          while IFS= read -r tag; do
+            [ -z "$tag" ] && continue
+            echo "推送 tag: $tag"
+            git push origin "refs/tags/${tag}:refs/tags/${tag}"
+          done <<< "${NEW_TAGS}"
+
+      - name: Summary
+        run: |
+          echo "✅ 上游同步完成"
+          echo "上游仓库: ${UPSTREAM_REPO}"
