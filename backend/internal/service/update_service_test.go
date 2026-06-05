@@ -82,19 +82,6 @@ func TestUpdateServiceVersionComparisonHandlesInvalidVersions(t *testing.T) {
 	require.Zero(t, compareVersions("bad-version", "also-bad"))
 }
 
-func TestNormalizeProductVersionSupportsLocalReleaseTag(t *testing.T) {
-	require.Equal(t, "0.1.134.1", normalizeProductVersion("v0.1.134-local.1"))
-	require.Equal(t, "0.1.134.1", normalizeProductVersion("0.1.134.1"))
-	require.Equal(t, "0.1.134", normalizeProductVersion("v0.1.134"))
-}
-
-func TestNormalizeProductVersionRejectsInvalidLocalReleaseTags(t *testing.T) {
-	require.Equal(t, "v0.1.134-local", normalizeProductVersion("v0.1.134-local"))
-	require.Equal(t, "v0.1.134-local.x", normalizeProductVersion("v0.1.134-local.x"))
-	require.Equal(t, "v0.1.134-local.01", normalizeProductVersion("v0.1.134-local.01"))
-	require.Equal(t, "0.1.134.1.1", normalizeProductVersion("0.1.134.1.1"))
-}
-
 func TestParseProductVersionBoundaries(t *testing.T) {
 	tests := []struct {
 		name       string

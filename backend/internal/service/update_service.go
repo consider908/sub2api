@@ -549,14 +549,6 @@ func parseVersion(v string) ([4]int, bool) {
 	return parts, ok
 }
 
-func normalizeProductVersion(v string) string {
-	normalized, _, ok := parseProductVersion(v)
-	if ok {
-		return normalized
-	}
-	return strings.TrimSpace(v)
-}
-
 func parseProductVersion(v string) (string, [4]int, bool) {
 	v = strings.TrimSpace(strings.TrimPrefix(v, "v"))
 	result := [4]int{0, 0, 0, 0}
