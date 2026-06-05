@@ -202,7 +202,7 @@ func (s *PricingService) checkAndUpdatePricing() error {
 	if s.cfg.Pricing.HashURL != "" {
 		remoteHash, err := s.fetchRemoteHash()
 		if err != nil {
-			logger.LegacyPrintf("service.pricing", "[Pricing] Failed to fetch remote hash on startup: %v", err)
+			logger.LegacyPrintf("service.pricing", "[Pricing] Warning: remote hash unavailable on startup, using local pricing file: %v", err)
 			return nil // 已加载本地文件，哈希获取失败不影响启动
 		}
 
@@ -245,7 +245,7 @@ func (s *PricingService) syncWithRemote() error {
 	if s.cfg.Pricing.HashURL != "" {
 		remoteHash, err := s.fetchRemoteHash()
 		if err != nil {
-			logger.LegacyPrintf("service.pricing", "[Pricing] Failed to fetch remote hash: %v", err)
+			logger.LegacyPrintf("service.pricing", "[Pricing] Warning: remote hash unavailable, keeping local pricing file: %v", err)
 			return nil // 哈希获取失败不影响正常使用
 		}
 
@@ -296,7 +296,7 @@ func (s *PricingService) downloadPricingData() error {
 	if strings.TrimSpace(s.cfg.Pricing.HashURL) != "" {
 		remoteHash, err = s.fetchRemoteHash()
 		if err != nil {
-			logger.LegacyPrintf("service.pricing", "[Pricing] Failed to fetch remote hash (continuing): %v", err)
+			logger.LegacyPrintf("service.pricing", "[Pricing] Warning: remote hash unavailable during download, continuing: %v", err)
 		}
 	}
 

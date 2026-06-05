@@ -285,7 +285,10 @@ func (s *UpdateService) fetchLatestRelease(ctx context.Context) (*UpdateInfo, er
 		return nil, err
 	}
 
-	latestVersion := strings.TrimPrefix(release.TagName, "v")
+	latestVersion, _, ok := parseProductVersion(release.TagName)
+	if !ok {
+		return nil, fmt.Errorf("invalid latest release tag: %s", release.TagName)
+	}
 
 	assets := make([]Asset, len(release.Assets))
 	for i, a := range release.Assets {
@@ -517,12 +520,20 @@ func (s *UpdateService) saveToCache(ctx context.Context, info *UpdateInfo) {
 	_ = s.cache.SetUpdateInfo(ctx, string(data), time.Duration(updateCacheTTL)*time.Second)
 }
 
-// compareVersions compares two semantic versions
+// compareVersions compares product versions. A missing local revision is treated
+// as revision 0, so 0.1.134 equals 0.1.134.0.
 func compareVersions(current, latest string) int {
-	currentParts := parseVersion(current)
-	latestParts := parseVersion(latest)
+	currentParts, currentOK := parseVersion(current)
+	latestParts, latestOK := parseVersion(latest)
 
-	for i := 0; i < 3; i++ {
+	if !latestOK {
+		return 0
+	}
+	if !currentOK {
+		return -1
+	}
+
+	for i := 0; i < 4; i++ {
 		if currentParts[i] < latestParts[i] {
 			return -1
 		}
@@ -533,14 +544,79 @@ func compareVersions(current, latest string) int {
 	return 0
 }
 
-func parseVersion(v string) [3]int {
-	v = strings.TrimPrefix(v, "v")
-	parts := strings.Split(v, ".")
-	result := [3]int{0, 0, 0}
-	for i := 0; i < len(parts) && i < 3; i++ {
-		if parsed, err := strconv.Atoi(parts[i]); err == nil {
-			result[i] = parsed
+func parseVersion(v string) ([4]int, bool) {
+	_, parts, ok := parseProductVersion(v)
+	return parts, ok
+}
+
+func normalizeProductVersion(v string) string {
+	normalized, _, ok := parseProductVersion(v)
+	if ok {
+		return normalized
+	}
+	return strings.TrimSpace(v)
+}
+
+func parseProductVersion(v string) (string, [4]int, bool) {
+	v = strings.TrimSpace(strings.TrimPrefix(v, "v"))
+	result := [4]int{0, 0, 0, 0}
+	if v == "" {
+		return "", result, false
+	}
+
+	var rawParts []string
+	if base, local, ok := strings.Cut(v, "-local."); ok {
+		baseParts := strings.Split(base, ".")
+		if len(baseParts) != 3 {
+			return "", result, false
+		}
+		rawParts = append(baseParts, local)
+	} else {
+		rawParts = strings.Split(v, ".")
+		if len(rawParts) != 3 && len(rawParts) != 4 {
+			return "", result, false
 		}
 	}
-	return result
+
+	for i, part := range rawParts {
+		parsed, ok := parseVersionPart(part)
+		if !ok {
+			return "", result, false
+		}
+		result[i] = parsed
+	}
+
+	normalized := strings.Join([]string{
+		strconv.Itoa(result[0]),
+		strconv.Itoa(result[1]),
+		strconv.Itoa(result[2]),
+		strconv.Itoa(result[3]),
+	}, ".")
+	if len(rawParts) == 3 {
+		normalized = strings.Join([]string{
+			strconv.Itoa(result[0]),
+			strconv.Itoa(result[1]),
+			strconv.Itoa(result[2]),
+		}, ".")
+	}
+	return normalized, result, true
+}
+
+func parseVersionPart(part string) (int, bool) {
+	if part == "" {
+		return 0, false
+	}
+	if len(part) > 1 && strings.HasPrefix(part, "0") {
+		return 0, false
+	}
+	for _, ch := range part {
+		if ch < '0' || ch > '9' {
+			return 0, false
+		}
+	}
+	value, err := strconv.Atoi(part)
+	if err != nil {
+		return 0, false
+	}
+	return value, true
 }

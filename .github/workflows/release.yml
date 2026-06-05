@@ -3,11 +3,11 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      - 'v*-local.*'
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag to release (e.g., v1.0.0)'
+        description: 'Tag to release (e.g., v0.1.134-local.1)'
         required: true
         type: string
       simple_release:
@@ -26,8 +26,35 @@ permissions:
   packages: write
 
 jobs:
+  validate_release_tag:
+    runs-on: ubuntu-latest
+    outputs:
+      tag_name: ${{ steps.tag.outputs.tag_name }}
+      product_version: ${{ steps.tag.outputs.product_version }}
+    steps:
+      - name: Validate release tag
+        id: tag
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG_NAME="${{ github.event.inputs.tag }}"
+          else
+            TAG_NAME="${GITHUB_REF#refs/tags/}"
+          fi
+
+          if [[ "$TAG_NAME" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)-local\.(0|[1-9][0-9]*)$ ]]; then
+            PRODUCT_VERSION="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}.${BASH_REMATCH[4]}"
+          else
+            echo "::error::Invalid release tag: ${TAG_NAME}. Expected vX.Y.Z-local.N"
+            exit 1
+          fi
+
+          echo "tag_name=${TAG_NAME}" >> "$GITHUB_OUTPUT"
+          echo "product_version=${PRODUCT_VERSION}" >> "$GITHUB_OUTPUT"
+
   # Update VERSION file with tag version
   update-version:
+    needs: validate_release_tag
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -35,12 +62,7 @@ jobs:
 
       - name: Update VERSION file
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION=${{ github.event.inputs.tag }}
-            VERSION=${VERSION#v}
-          else
-            VERSION=${GITHUB_REF#refs/tags/v}
-          fi
+          VERSION="${{ needs.validate_release_tag.outputs.product_version }}"
           echo "$VERSION" > backend/cmd/server/VERSION
           echo "Updated VERSION file to: $VERSION"
 
@@ -52,6 +74,7 @@ jobs:
           retention-days: 1
 
   build-frontend:
+    needs: validate_release_tag
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -85,14 +108,14 @@ jobs:
           retention-days: 1
 
   release:
-    needs: [update-version, build-frontend]
+    needs: [validate_release_tag, update-version, build-frontend]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
-          ref: ${{ github.event.inputs.tag || github.ref }}
+          ref: ${{ needs.validate_release_tag.outputs.tag_name }}
 
       - name: Download VERSION artifact
         uses: actions/download-artifact@v8
@@ -148,11 +171,7 @@ jobs:
       - name: Get tag message
         id: tag_message
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            TAG_NAME=${{ github.event.inputs.tag }}
-          else
-            TAG_NAME=${GITHUB_REF#refs/tags/}
-          fi
+          TAG_NAME="${{ needs.validate_release_tag.outputs.tag_name }}"
           echo "Processing tag: $TAG_NAME"
 
           # 获取完整的 tag message（跳过第一行标题）
@@ -213,12 +232,9 @@ jobs:
             exit 0
           fi
 
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            TAG_NAME=${{ github.event.inputs.tag }}
-          else
-            TAG_NAME=${GITHUB_REF#refs/tags/}
-          fi
-          VERSION=${TAG_NAME#v}
+          TAG_NAME="${{ needs.validate_release_tag.outputs.tag_name }}"
+          RELEASE_VERSION=${TAG_NAME#v}
+          PRODUCT_VERSION="${{ needs.validate_release_tag.outputs.product_version }}"
           REPO="${{ github.repository }}"
           GHCR_IMAGE="ghcr.io/${REPO,,}"  # ${,,} converts to lowercase
 
@@ -233,7 +249,8 @@ jobs:
 
           # 构建消息内容
           MESSAGE="🚀 *Sub2API 新版本发布！*"$'\n'$'\n'
-          MESSAGE+="📦 版本号: \`${VERSION}\`"$'\n'$'\n'
+          MESSAGE+="📦 版本号: \`${PRODUCT_VERSION}\`"$'\n'
+          MESSAGE+="🏷️ Release Tag: \`${TAG_NAME}\`"$'\n'$'\n'
 
           # 添加更新内容
           if [ -n "$TAG_MESSAGE" ]; then
@@ -246,10 +263,10 @@ jobs:
           if [ -n "$DOCKERHUB_USERNAME" ]; then
             DOCKER_IMAGE="${DOCKERHUB_USERNAME}/sub2api"
             MESSAGE+="# Docker Hub"$'\n'
-            MESSAGE+="docker pull ${DOCKER_IMAGE}:${VERSION}"$'\n'
+            MESSAGE+="docker pull ${DOCKER_IMAGE}:${RELEASE_VERSION}"$'\n'
             MESSAGE+="# GitHub Container Registry"$'\n'
           fi
-          MESSAGE+="docker pull ${GHCR_IMAGE}:${VERSION}"$'\n'
+          MESSAGE+="docker pull ${GHCR_IMAGE}:${RELEASE_VERSION}"$'\n'
           MESSAGE+="\`\`\`"$'\n'$'\n'
           MESSAGE+="🔗 *相关链接:*"$'\n'
           MESSAGE+="• [GitHub Release](https://github.com/${REPO}/releases/tag/${TAG_NAME})"$'\n'
@@ -273,7 +290,7 @@ jobs:
               }')"
 
   sync-version-file:
-    needs: [release]
+    needs: [validate_release_tag, release]
     if: ${{ needs.release.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
@@ -284,12 +301,8 @@ jobs:
 
       - name: Sync VERSION file to released tag
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION=${{ github.event.inputs.tag }}
-            VERSION=${VERSION#v}
-          else
-            VERSION=${GITHUB_REF#refs/tags/v}
-          fi
+          TAG_NAME="${{ needs.validate_release_tag.outputs.tag_name }}"
+          VERSION="${{ needs.validate_release_tag.outputs.product_version }}"
 
           CURRENT_VERSION=$(tr -d '\r\n' < backend/cmd/server/VERSION || true)
           if [ "$CURRENT_VERSION" = "$VERSION" ]; then
