@@ -478,6 +478,10 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/admin/accounts',
+    redirect: '/admin/accounts/anthropic'
+  },
+  {
+    path: '/admin/accounts/:platform(anthropic|openai|gemini|antigravity)',
     name: 'AdminAccounts',
     component: () => import('@/views/admin/AccountsView.vue'),
     meta: {

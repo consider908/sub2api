@@ -30,3 +30,16 @@ describe('AppSidebar header styles', () => {
     expect(sidebarBrandBlockMatch?.[0]).not.toContain('overflow: hidden;')
   })
 })
+
+describe('AppSidebar account platform navigation', () => {
+  it('renders account management as platform child links', () => {
+    expect(componentSource).toContain("import PlatformIcon from '@/components/common/PlatformIcon.vue'")
+    expect(componentSource).toContain("const platformNavIcon = (platform: AccountPlatform)")
+    expect(componentSource).toContain("path: '/admin/accounts',")
+    expect(componentSource).toContain("expandOnly: true,")
+    expect(componentSource).toContain("{ path: '/admin/accounts/anthropic', label: 'Anthropic', icon: platformNavIcon('anthropic') }")
+    expect(componentSource).toContain("{ path: '/admin/accounts/openai', label: 'OpenAI', icon: platformNavIcon('openai') }")
+    expect(componentSource).toContain("{ path: '/admin/accounts/gemini', label: 'Gemini', icon: platformNavIcon('gemini') }")
+    expect(componentSource).toContain("{ path: '/admin/accounts/antigravity', label: 'Antigravity', icon: platformNavIcon('antigravity') }")
+  })
+})

@@ -21,8 +21,8 @@ type ComponentImportFn = () => Promise<unknown>
  */
 const PREFETCH_ADJACENCY: Record<string, string[]> = {
   // Admin routes - 预加载最常访问的相邻页面
-  '/admin/dashboard': ['/admin/accounts', '/admin/users'],
-  '/admin/accounts': ['/admin/dashboard', '/admin/users'],
+  '/admin/dashboard': ['/admin/accounts/anthropic', '/admin/users'],
+  '/admin/accounts/anthropic': ['/admin/dashboard', '/admin/users'],
   '/admin/users': ['/admin/groups', '/admin/dashboard'],
   '/admin/groups': ['/admin/subscriptions', '/admin/users'],
   '/admin/subscriptions': ['/admin/groups', '/admin/redeem'],
@@ -81,7 +81,7 @@ export function useRoutePrefetch(router?: Router) {
     if (!router) return null
 
     const routes = router.getRoutes()
-    const route = routes.find((r) => r.path === path)
+    const route = routes.find((r) => r.path === path) ?? router.resolve(path).matched.at(-1)
 
     if (route && route.components?.default) {
       const component = route.components.default

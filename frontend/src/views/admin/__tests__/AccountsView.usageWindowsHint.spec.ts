@@ -8,13 +8,15 @@ const {
   listWithEtag,
   getBatchTodayStats,
   getAllProxies,
-  getAllGroups
+  getAllGroups,
+  routeMock
 } = vi.hoisted(() => ({
   listAccounts: vi.fn(),
   listWithEtag: vi.fn(),
   getBatchTodayStats: vi.fn(),
   getAllProxies: vi.fn(),
-  getAllGroups: vi.fn()
+  getAllGroups: vi.fn(),
+  routeMock: { route: null as null | { params: { platform: string } } }
 }))
 
 vi.mock('@/api/admin', () => ({
@@ -58,6 +60,14 @@ vi.mock('vue-i18n', async () => {
     useI18n: () => ({
       t: (key: string) => key
     })
+  }
+})
+
+vi.mock('vue-router', async () => {
+  const { reactive } = await vi.importActual<typeof import('vue')>('vue')
+  routeMock.route = reactive({ params: { platform: 'anthropic' } })
+  return {
+    useRoute: () => routeMock.route
   }
 })
 
@@ -130,6 +140,9 @@ describe('admin AccountsView usage windows hint', () => {
     getBatchTodayStats.mockReset()
     getAllProxies.mockReset()
     getAllGroups.mockReset()
+    if (routeMock.route) {
+      routeMock.route.params.platform = 'anthropic'
+    }
 
     listAccounts.mockResolvedValue({
       items: [],

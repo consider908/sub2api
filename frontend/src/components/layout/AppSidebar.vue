@@ -185,8 +185,10 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAdminSettingsStore, useAppStore, useAuthStore, useOnboardingStore } from '@/stores'
 import VersionBadge from '@/components/common/VersionBadge.vue'
+import PlatformIcon from '@/components/common/PlatformIcon.vue'
 import { sanitizeSvg } from '@/utils/sanitize'
 import { FeatureFlags, makeSidebarFlag } from '@/utils/featureFlags'
+import type { AccountPlatform } from '@/types'
 
 interface NavItem {
   path: string
@@ -643,6 +645,10 @@ const ChevronDownIcon = {
     )
 }
 
+const platformNavIcon = (platform: AccountPlatform) => ({
+  render: () => h(PlatformIcon, { platform, size: 'lg' })
+})
+
 // Public-settings flags go through the registry in utils/featureFlags.ts,
 // which handles the opt-in vs opt-out fallback when settings haven't loaded
 // yet. Admin-only flags (not in public settings) stay inline below.
@@ -732,7 +738,18 @@ const adminNavItems = computed((): NavItem[] => {
       ],
     },
     { path: '/admin/subscriptions', label: t('nav.subscriptions'), icon: CreditCardIcon, hideInSimpleMode: true },
-    { path: '/admin/accounts', label: t('nav.accounts'), icon: GlobeIcon },
+    {
+      path: '/admin/accounts',
+      label: t('nav.accounts'),
+      icon: GlobeIcon,
+      expandOnly: true,
+      children: [
+        { path: '/admin/accounts/anthropic', label: 'Anthropic', icon: platformNavIcon('anthropic') },
+        { path: '/admin/accounts/openai', label: 'OpenAI', icon: platformNavIcon('openai') },
+        { path: '/admin/accounts/gemini', label: 'Gemini', icon: platformNavIcon('gemini') },
+        { path: '/admin/accounts/antigravity', label: 'Antigravity', icon: platformNavIcon('antigravity') },
+      ],
+    },
     { path: '/admin/announcements', label: t('nav.announcements'), icon: BellIcon },
     { path: '/admin/proxies', label: t('nav.proxies'), icon: ServerIcon },
     { path: '/admin/risk-control', label: t('nav.riskControl'), icon: ShieldIcon, hideInSimpleMode: true, featureFlag: flagRiskControl },

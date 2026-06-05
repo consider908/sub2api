@@ -350,7 +350,14 @@
       </template>
       <template #pagination><Pagination v-if="pagination.total > 0" :page="pagination.page" :total="pagination.total" :page-size="pagination.page_size" @update:page="handlePageChange" @update:pageSize="handlePageSizeChange" /></template>
     </TablePageLayout>
-    <CreateAccountModal :show="showCreate" :proxies="proxies" :groups="groups" @close="showCreate = false" @created="reload" />
+    <CreateAccountModal
+      :show="showCreate"
+      :platform="currentPlatform"
+      :proxies="proxies"
+      :groups="groups"
+      @close="showCreate = false"
+      @created="reload"
+    />
     <EditAccountModal :show="showEdit" :account="edAcc" :proxies="proxies" :groups="groups" @close="showEdit = false" @updated="handleAccountUpdated" />
     <ReAuthAccountModal :show="showReAuth" :account="reAuthAcc" @close="closeReAuthModal" @reauthorized="handleAccountUpdated" />
     <AccountTestModal :show="showTest" :account="testingAcc" @close="closeTestModal" />
@@ -387,6 +394,7 @@
 import { ref, reactive, computed, onMounted, onUnmounted, toRaw, watch } from 'vue'
 import { useIntervalFn } from '@vueuse/core'
 import { useI18n } from 'vue-i18n'
+import { useRoute } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
 import { adminAPI } from '@/api/admin'
@@ -424,8 +432,17 @@ import { formatDateTime, formatRelativeTime } from '@/utils/format'
 import type { Account, AccountPlatform, AccountType, Proxy as AccountProxy, AdminGroup, WindowStats, ClaudeModel } from '@/types'
 
 const { t } = useI18n()
+const route = useRoute()
 const appStore = useAppStore()
 const authStore = useAuthStore()
+
+const ACCOUNT_PLATFORMS = ['anthropic', 'openai', 'gemini', 'antigravity'] as const
+const isAccountPlatform = (value: unknown): value is AccountPlatform =>
+  typeof value === 'string' && ACCOUNT_PLATFORMS.includes(value as AccountPlatform)
+const currentPlatform = computed<AccountPlatform>(() => {
+  const platform = Array.isArray(route.params.platform) ? route.params.platform[0] : route.params.platform
+  return isAccountPlatform(platform) ? platform : 'anthropic'
+})
 
 const proxies = ref<AccountProxy[]>([])
 const groups = ref<AdminGroup[]>([])
@@ -733,7 +750,7 @@ const {
 } = useTableLoader<Account, any>({
   fetchFn: adminAPI.accounts.list,
   initialParams: {
-    platform: '',
+    platform: currentPlatform.value,
     type: '',
     status: '',
     privacy_mode: '',
@@ -779,9 +796,15 @@ const resetAutoRefreshCache = () => {
   autoRefreshETag.value = null
 }
 
+const syncRoutePlatformParam = () => {
+  const requestParams = params as any
+  requestParams.platform = currentPlatform.value
+}
+
 const isFirstLoad = ref(true)
 
 const load = async () => {
+  syncRoutePlatformParam()
   const requestParams = params as any
   hasPendingListSync.value = false
   resetAutoRefreshCache()
@@ -798,6 +821,7 @@ const load = async () => {
 }
 
 const reload = async () => {
+  syncRoutePlatformParam()
   hasPendingListSync.value = false
   resetAutoRefreshCache()
   pendingTodayStatsRefresh.value = false
@@ -806,6 +830,7 @@ const reload = async () => {
 }
 
 const debouncedReload = () => {
+  syncRoutePlatformParam()
   hasPendingListSync.value = false
   resetAutoRefreshCache()
   pendingTodayStatsRefresh.value = true
@@ -813,6 +838,7 @@ const debouncedReload = () => {
 }
 
 const handlePageChange = (page: number) => {
+  syncRoutePlatformParam()
   hasPendingListSync.value = false
   resetAutoRefreshCache()
   pendingTodayStatsRefresh.value = true
@@ -820,6 +846,7 @@ const handlePageChange = (page: number) => {
 }
 
 const handlePageSizeChange = (size: number) => {
+  syncRoutePlatformParam()
   hasPendingListSync.value = false
   resetAutoRefreshCache()
   pendingTodayStatsRefresh.value = true
@@ -827,6 +854,7 @@ const handlePageSizeChange = (size: number) => {
 }
 
 const handleSort = (key: string, order: AccountSortOrder) => {
+  syncRoutePlatformParam()
   sortState.sort_by = key
   sortState.sort_order = order
   const requestParams = params as any
@@ -846,6 +874,20 @@ watch(loading, (isLoading, wasLoading) => {
       console.error('Failed to refresh account today stats after table load:', error)
     })
   }
+})
+
+watch(currentPlatform, (platform, previousPlatform) => {
+  syncRoutePlatformParam()
+  if (!previousPlatform || platform === previousPlatform) return
+  showCreate.value = false
+  clearSelection()
+  pagination.page = 1
+  hasPendingListSync.value = false
+  resetAutoRefreshCache()
+  pendingTodayStatsRefresh.value = false
+  load().catch((error) => {
+    console.error('Failed to reload accounts after platform route change:', error)
+  })
 })
 
 const isAnyModalOpen = computed(() => {
@@ -931,6 +973,7 @@ const mergeAccountsIncrementally = (nextRows: Account[]) => {
 
 const refreshAccountsIncrementally = async () => {
   if (autoRefreshFetching.value) return
+  syncRoutePlatformParam()
   autoRefreshFetching.value = true
   try {
     const result = await adminAPI.accounts.listWithEtag(

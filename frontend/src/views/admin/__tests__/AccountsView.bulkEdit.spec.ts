@@ -8,13 +8,15 @@ const {
   listWithEtag,
   getBatchTodayStats,
   getAllProxies,
-  getAllGroups
+  getAllGroups,
+  routeMock
 } = vi.hoisted(() => ({
   listAccounts: vi.fn(),
   listWithEtag: vi.fn(),
   getBatchTodayStats: vi.fn(),
   getAllProxies: vi.fn(),
-  getAllGroups: vi.fn()
+  getAllGroups: vi.fn(),
+  routeMock: { route: null as null | { params: { platform: string } } }
 }))
 
 vi.mock('@/api/admin', () => ({
@@ -61,6 +63,14 @@ vi.mock('vue-i18n', async () => {
   }
 })
 
+vi.mock('vue-router', async () => {
+  const { reactive } = await vi.importActual<typeof import('vue')>('vue')
+  routeMock.route = reactive({ params: { platform: 'openai' } })
+  return {
+    useRoute: () => routeMock.route
+  }
+})
+
 const DataTableStub = {
   props: ['columns', 'data'],
   template: `
@@ -79,6 +89,16 @@ const AccountBulkActionsBarStub = {
   template: '<button data-test="edit-filtered" @click="$emit(\'edit-filtered\')">edit filtered</button>'
 }
 
+const AccountTableActionsStub = {
+  emits: ['create'],
+  template: '<div><button data-test="create-account" @click="$emit(\'create\')">create</button><slot name="beforeCreate" /><slot name="after" /></div>'
+}
+
+const CreateAccountModalStub = {
+  props: ['show', 'platform'],
+  template: '<div data-test="create-account-modal" :data-show="String(show)" :data-platform="platform"></div>'
+}
+
 const BulkEditAccountModalStub = {
   props: ['show', 'target'],
   template: '<div data-test="bulk-edit-modal" :data-show="String(show)" :data-target-mode="target?.mode ?? \'\'"></div>'
@@ -93,6 +113,9 @@ describe('admin AccountsView bulk edit scope', () => {
     getBatchTodayStats.mockReset()
     getAllProxies.mockReset()
     getAllGroups.mockReset()
+    if (routeMock.route) {
+      routeMock.route.params.platform = 'openai'
+    }
 
     listAccounts.mockResolvedValue({
       items: [],
@@ -122,7 +145,7 @@ describe('admin AccountsView bulk edit scope', () => {
           DataTable: DataTableStub,
           Pagination: true,
           ConfirmDialog: true,
-          AccountTableActions: { template: '<div><slot name="beforeCreate" /><slot name="after" /></div>' },
+          AccountTableActions: AccountTableActionsStub,
           AccountTableFilters: { template: '<div></div>' },
           AccountBulkActionsBar: AccountBulkActionsBarStub,
           AccountActionMenu: true,
@@ -135,7 +158,7 @@ describe('admin AccountsView bulk edit scope', () => {
           TempUnschedStatusModal: true,
           ErrorPassthroughRulesModal: true,
           TLSFingerprintProfilesModal: true,
-          CreateAccountModal: true,
+          CreateAccountModal: CreateAccountModalStub,
           EditAccountModal: true,
           BulkEditAccountModal: BulkEditAccountModalStub,
           PlatformTypeBadge: true,
@@ -153,6 +176,12 @@ describe('admin AccountsView bulk edit scope', () => {
     await wrapper.get('[data-test="edit-filtered"]').trigger('click')
     await flushPromises()
 
+    expect(listAccounts).toHaveBeenCalledWith(
+      1,
+      expect.any(Number),
+      expect.objectContaining({ platform: 'openai' }),
+      expect.any(Object)
+    )
     expect(wrapper.get('[data-test="bulk-edit-modal"]').attributes('data-show')).toBe('true')
     expect(wrapper.get('[data-test="bulk-edit-modal"]').attributes('data-target-mode')).toBe('filtered')
   })
@@ -187,7 +216,7 @@ describe('admin AccountsView bulk edit scope', () => {
           DataTable: DataTableStub,
           Pagination: true,
           ConfirmDialog: true,
-          AccountTableActions: { template: '<div><slot name="beforeCreate" /><slot name="after" /></div>' },
+          AccountTableActions: AccountTableActionsStub,
           AccountTableFilters: { template: '<div></div>' },
           AccountBulkActionsBar: AccountBulkActionsBarStub,
           AccountActionMenu: true,
@@ -200,7 +229,7 @@ describe('admin AccountsView bulk edit scope', () => {
           TempUnschedStatusModal: true,
           ErrorPassthroughRulesModal: true,
           TLSFingerprintProfilesModal: true,
-          CreateAccountModal: true,
+          CreateAccountModal: CreateAccountModalStub,
           EditAccountModal: true,
           BulkEditAccountModal: BulkEditAccountModalStub,
           PlatformTypeBadge: true,
@@ -223,5 +252,59 @@ describe('admin AccountsView bulk edit scope', () => {
       label: 'admin.accounts.columns.createdAt',
       sortable: true
     })
+  })
+
+  it('passes the route platform to the create account modal', async () => {
+    routeMock.route!.params.platform = 'gemini'
+
+    const wrapper = mount(AccountsView, {
+      global: {
+        stubs: {
+          AppLayout: { template: '<div><slot /></div>' },
+          TablePageLayout: {
+            template: '<div><slot name="filters" /><slot name="table" /><slot name="pagination" /></div>'
+          },
+          DataTable: DataTableStub,
+          Pagination: true,
+          ConfirmDialog: true,
+          AccountTableActions: AccountTableActionsStub,
+          AccountTableFilters: { template: '<div></div>' },
+          AccountBulkActionsBar: AccountBulkActionsBarStub,
+          AccountActionMenu: true,
+          ImportDataModal: true,
+          ReAuthAccountModal: true,
+          AccountTestModal: true,
+          AccountStatsModal: true,
+          ScheduledTestsPanel: true,
+          SyncFromCrsModal: true,
+          TempUnschedStatusModal: true,
+          ErrorPassthroughRulesModal: true,
+          TLSFingerprintProfilesModal: true,
+          CreateAccountModal: CreateAccountModalStub,
+          EditAccountModal: true,
+          BulkEditAccountModal: BulkEditAccountModalStub,
+          PlatformTypeBadge: true,
+          AccountCapacityCell: true,
+          AccountStatusIndicator: true,
+          AccountTodayStatsCell: true,
+          AccountGroupsCell: true,
+          AccountUsageCell: true,
+          Icon: true
+        }
+      }
+    })
+
+    await flushPromises()
+    await wrapper.get('[data-test="create-account"]').trigger('click')
+
+    const modal = wrapper.get('[data-test="create-account-modal"]')
+    expect(modal.attributes('data-show')).toBe('true')
+    expect(modal.attributes('data-platform')).toBe('gemini')
+    expect(listAccounts).toHaveBeenCalledWith(
+      1,
+      expect.any(Number),
+      expect.objectContaining({ platform: 'gemini' }),
+      expect.any(Object)
+    )
   })
 })
