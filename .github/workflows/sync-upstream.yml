@@ -213,7 +213,7 @@ jobs:
           while IFS= read -r tag; do
             [ -z "$tag" ] && continue
             echo "触发 release workflow: $tag"
-            gh workflow run release.yml --ref "$tag" -f tag="$tag"
+            gh workflow run release.yml --repo "${GITHUB_REPOSITORY}" --ref "$tag" -f tag="$tag"
           done <<< "$CREATED_TAGS"
 
       - name: Summary
