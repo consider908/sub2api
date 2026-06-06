@@ -82,8 +82,22 @@ jobs:
               echo "上游分支合并成功"
               git push origin "${DEFAULT_BRANCH}"
             else
-              echo "::warning::无法自动合并上游分支，可能存在冲突。如需强制覆盖请手动触发并启用 force 选项。"
-              exit 1
+              VERSION_FILE="backend/cmd/server/VERSION"
+              if git diff --name-only --diff-filter=U | grep -Fxq "${VERSION_FILE}"; then
+                echo "检测到 ${VERSION_FILE} 冲突，采用上游版本"
+                git checkout --theirs "${VERSION_FILE}"
+                git add "${VERSION_FILE}"
+              fi
+
+              if [ -n "$(git diff --name-only --diff-filter=U)" ]; then
+                echo "::warning::无法自动合并上游分支，仍存在非 VERSION 文件冲突。如需强制覆盖请手动触发并启用 force 选项。"
+                git diff --name-only --diff-filter=U
+                exit 1
+              fi
+
+              git commit --no-edit
+              echo "上游分支合并成功，VERSION 冲突已采用上游版本"
+              git push origin "${DEFAULT_BRANCH}"
             fi
           fi
 
