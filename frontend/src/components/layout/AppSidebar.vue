@@ -646,7 +646,7 @@ const ChevronDownIcon = {
 }
 
 const platformNavIcon = (platform: AccountPlatform) => ({
-  render: () => h(PlatformIcon, { platform, size: 'lg' })
+  render: () => h(PlatformIcon, { platform, size: 'md' })
 })
 
 // Public-settings flags go through the registry in utils/featureFlags.ts,

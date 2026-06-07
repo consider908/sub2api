@@ -40,20 +40,6 @@
                 <span>{{ t('usage.in') }} {{ formatTokens(usageStats?.total_input_tokens || 0) }}</span>
                 <span> · </span>
                 <span>{{ t('usage.out') }} {{ formatTokens(usageStats?.total_output_tokens || 0) }}</span>
-                <span> · </span>
-                <span class="text-sky-600 dark:text-sky-400">{{ t('usage.cacheHit') }} {{ formatTokens(usageStats?.total_cache_read_tokens || 0) }}</span>
-                <span> · </span>
-                <span class="text-amber-600 dark:text-amber-400">{{ t('usage.cacheCreate') }} {{ formatTokens(usageStats?.total_cache_creation_tokens || 0) }}</span>
-              </p>
-              <p class="text-xs text-gray-400 dark:text-gray-500">
-                {{ t('usage.cacheHitRate') }}:
-                <template v-if="cacheStats.totalInput > 0">
-                  <span class="text-sky-600 dark:text-sky-400">{{ formatTokens(cacheStats.cacheRead) }}</span>
-                  <span class="text-gray-400">/</span>
-                  <span class="text-gray-600 dark:text-gray-300">{{ formatTokens(cacheStats.totalInput) }}</span>
-                  <span class="ml-1">{{ cacheStats.ratePercent }}</span>
-                </template>
-                <template v-else>-</template>
               </p>
             </div>
           </div>
@@ -264,34 +250,6 @@
                     <span class="font-medium text-gray-900 dark:text-white">{{
                       (row.output_tokens ?? 0).toLocaleString()
                     }}</span>
-                  </div>
-                </div>
-                <!-- Cache Tokens (Read + Write) -->
-                <div
-                  v-if="row.cache_read_tokens > 0 || row.cache_creation_tokens > 0"
-                  class="flex items-center gap-2"
-                >
-                  <!-- Cache Read -->
-                  <div v-if="row.cache_read_tokens > 0" class="inline-flex items-center gap-1">
-                    <Icon name="inbox" size="sm" class="text-sky-500" />
-                    <span class="font-medium text-sky-600 dark:text-sky-400">{{
-                      formatCacheTokens(row.cache_read_tokens)
-                    }}</span>
-                  </div>
-                  <!-- Cache Write -->
-                  <div v-if="row.cache_creation_tokens > 0" class="inline-flex items-center gap-1">
-                    <Icon name="edit" size="sm" class="text-amber-500" />
-                    <span class="font-medium text-amber-600 dark:text-amber-400">{{
-                      formatCacheTokens(row.cache_creation_tokens)
-                    }}</span>
-                    <span v-if="row.cache_creation_1h_tokens > 0" class="inline-flex items-center rounded px-1 py-px text-[10px] font-medium leading-tight bg-orange-100 text-orange-600 ring-1 ring-inset ring-orange-200 dark:bg-orange-500/20 dark:text-orange-400 dark:ring-orange-500/30">1h</span>
-                    <span v-if="row.cache_ttl_overridden" :title="t('usage.cacheTtlOverriddenHint')" class="inline-flex items-center rounded px-1 py-px text-[10px] font-medium leading-tight bg-rose-100 text-rose-600 ring-1 ring-inset ring-rose-200 dark:bg-rose-500/20 dark:text-rose-400 dark:ring-rose-500/30 cursor-help">R</span>
-                  </div>
-                </div>
-                <div v-if="hasImageOutputTokens(row)" class="flex items-center gap-2">
-                  <div class="inline-flex items-center gap-1">
-                    <svg class="h-3.5 w-3.5 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                    <span class="font-medium text-pink-600 dark:text-pink-400">{{ row.image_output_tokens.toLocaleString() }}</span>
                   </div>
                 </div>
               </div>
@@ -624,7 +582,7 @@ import type { UsageLog, ApiKey, UsageQueryParams, UsageStatsResponse, UserErrorR
 import type { Column } from '@/components/common/types'
 import { formatDateTime, formatReasoningEffort } from '@/utils/format'
 import { getPersistedPageSize } from '@/composables/usePersistedPageSize'
-import { formatCacheTokens, formatMultiplier } from '@/utils/formatters'
+import { formatMultiplier } from '@/utils/formatters'
 import { formatTokenPricePerMillion } from '@/utils/usagePricing'
 import { getUsageServiceTierLabel } from '@/utils/usageServiceTier'
 import { resolveUsageRequestType } from '@/utils/usageRequestType'
@@ -664,19 +622,6 @@ const tokenTooltipData = ref<UsageLog | null>(null)
 
 // Usage stats from API
 const usageStats = ref<UsageStatsResponse | null>(null)
-
-// 缓存命中率 = cache_read / (input + cache_read)
-// 分母为 0（无任何输入）时显示 '-'
-const cacheStats = computed(() => {
-  // 总输入 token = 普通输入 + 缓存写入 + 缓存读取（命中）
-  // 缓存命中率 = 缓存读取 / 总输入；总输入为 0 时返回零值，模板按 '-' 渲染。
-  const cacheRead = usageStats.value?.total_cache_read_tokens || 0
-  const cacheCreate = usageStats.value?.total_cache_creation_tokens || 0
-  const input = usageStats.value?.total_input_tokens || 0
-  const totalInput = input + cacheCreate + cacheRead
-  const ratePercent = totalInput > 0 ? `${((cacheRead / totalInput) * 100).toFixed(1)}%` : '-'
-  return { cacheRead, totalInput, ratePercent }
-})
 
 const columns = computed<Column[]>(() => [
   { key: 'api_key', label: t('usage.apiKeyFilter'), sortable: false },
