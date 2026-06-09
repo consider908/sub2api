@@ -459,6 +459,7 @@ export default {
     selectKeyRequired: 'Select an available API key',
     promptRequired: 'Enter a prompt',
     generateSuccess: 'Generation completed',
+    partialGenerateSuccess: '{count} images generated, {failed} requests failed',
     generateFailed: 'Generation failed',
     noImagesReturned: 'The gateway returned no images',
     promptCopied: 'Prompt copied',

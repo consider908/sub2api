@@ -7,7 +7,8 @@ const mocks = vi.hoisted(() => ({
   generateImage: vi.fn(),
   listKeys: vi.fn(),
   showError: vi.fn(),
-  showSuccess: vi.fn()
+  showSuccess: vi.fn(),
+  showWarning: vi.fn()
 }))
 
 vi.mock('@/api/keys', () => ({
@@ -24,7 +25,8 @@ vi.mock('@/api/imageWorkbench', () => ({
 vi.mock('@/stores/app', () => ({
   useAppStore: () => ({
     showError: mocks.showError,
-    showSuccess: mocks.showSuccess
+    showSuccess: mocks.showSuccess,
+    showWarning: mocks.showWarning
   })
 }))
 
@@ -66,11 +68,6 @@ function mountView() {
           template: '<div><slot name="icon" /><h3>{{ title }}</h3><p>{{ description }}</p><button v-if="actionText">{{ actionText }}</button><slot /></div>'
         },
         Icon: { template: '<span />' },
-        Input: {
-          props: ['modelValue', 'label'],
-          emits: ['update:modelValue'],
-          template: '<label><span>{{ label }}</span><input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" /></label>'
-        },
         Select: {
           props: ['modelValue', 'options', 'placeholder'],
           emits: ['update:modelValue'],
@@ -145,6 +142,25 @@ describe('ImageWorkbenchView', () => {
 
     expect(mocks.generateImage).toHaveBeenCalledWith(expect.objectContaining({ apiKey: 'sk-image', prompt: 'Create a product render' }))
     expect(wrapper.find('img[alt="Create a product render"]').exists()).toBe(true)
+  })
+
+  it('runs one-image requests concurrently for the selected count', async () => {
+    mocks.listKeys.mockResolvedValue({ items: [makeKey()] })
+    mocks.generateImage
+      .mockResolvedValueOnce({ images: [{ src: 'data:image/png;base64,one' }] })
+      .mockResolvedValueOnce({ images: [{ src: 'data:image/png;base64,two' }] })
+
+    const wrapper = mountView()
+    await flushPromises()
+    await wrapper.find('textarea').setValue('Create two product renders')
+    await wrapper.findAll('select')[2].setValue('2')
+    await wrapper.findAll('button').find((item) => item.text().includes('imageWorkbench.generateButton'))!.trigger('click')
+    await flushPromises()
+
+    expect(mocks.generateImage).toHaveBeenCalledTimes(2)
+    expect(mocks.generateImage).toHaveBeenNthCalledWith(1, expect.objectContaining({ n: 1 }))
+    expect(mocks.generateImage).toHaveBeenNthCalledWith(2, expect.objectContaining({ n: 1 }))
+    expect(wrapper.findAll('article')).toHaveLength(2)
   })
 
   it('sets a selected result as reference and switches the next request to edits', async () => {

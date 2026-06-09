@@ -459,6 +459,7 @@ export default {
     selectKeyRequired: '请选择可用的 API Key',
     promptRequired: '请输入 Prompt',
     generateSuccess: '生成成功',
+    partialGenerateSuccess: '已生成 {count} 张，{failed} 个请求失败',
     generateFailed: '生成失败',
     noImagesReturned: '网关未返回图片',
     promptCopied: 'Prompt 已复制',

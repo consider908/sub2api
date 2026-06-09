@@ -1,6 +1,6 @@
 <template>
   <AppLayout>
-    <div class="mx-auto flex w-full max-w-[1600px] flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8">
+    <div class="-m-4 flex min-h-[calc(100dvh-4rem)] w-auto flex-col gap-4 bg-gray-50 p-4 dark:bg-dark-950 md:-m-6 md:p-5 lg:-m-8 lg:p-6">
       <div class="flex flex-col gap-3 border-b border-gray-200 pb-4 dark:border-dark-700 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <div class="flex items-center gap-2 text-sm font-medium text-primary-600 dark:text-primary-400">
@@ -36,14 +36,14 @@
         </EmptyState>
       </div>
 
-      <div v-else class="grid gap-5 xl:grid-cols-[360px_minmax(0,1fr)_340px]">
-        <section class="rounded-lg border border-gray-200 bg-white dark:border-dark-700 dark:bg-dark-800">
+      <div v-else class="grid flex-1 gap-4 xl:min-h-0 xl:grid-cols-[340px_minmax(0,1fr)_340px] 2xl:grid-cols-[380px_minmax(0,1fr)_360px]">
+        <section class="flex min-h-0 flex-col rounded-lg border border-gray-200 bg-white dark:border-dark-700 dark:bg-dark-800 xl:max-h-[calc(100dvh-9rem)]">
           <div class="border-b border-gray-200 px-5 py-4 dark:border-dark-700">
             <h2 class="text-base font-semibold text-gray-900 dark:text-white">{{ t('imageWorkbench.parameters') }}</h2>
             <p class="mt-1 text-sm text-gray-500 dark:text-dark-300">{{ t('imageWorkbench.parametersHint') }}</p>
           </div>
 
-          <div class="space-y-5 px-5 py-5">
+          <div class="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5">
             <label class="block">
               <span class="input-label mb-1.5 block">{{ t('imageWorkbench.apiKey') }}</span>
               <Select
@@ -54,13 +54,6 @@
                 searchable="auto"
               />
             </label>
-
-            <Input
-              v-model="form.model"
-              :label="t('imageWorkbench.model')"
-              :placeholder="DEFAULT_FORM.model"
-              autocomplete="off"
-            />
 
             <div class="grid grid-cols-2 gap-3">
               <label class="block">
@@ -83,11 +76,6 @@
                 <Select v-model="form.output_format" :options="formatOptions" />
               </label>
             </div>
-
-            <label class="block">
-              <span class="input-label mb-1.5 block">{{ t('imageWorkbench.background') }}</span>
-              <Select v-model="form.background" :options="backgroundOptions" />
-            </label>
 
             <div>
               <div class="mb-2 flex items-center justify-between gap-3">
@@ -159,7 +147,7 @@
           </div>
         </section>
 
-        <section class="min-h-[560px] rounded-lg border border-gray-200 bg-white dark:border-dark-700 dark:bg-dark-800">
+        <section class="flex min-h-[560px] flex-col rounded-lg border border-gray-200 bg-white dark:border-dark-700 dark:bg-dark-800 xl:min-h-0 xl:max-h-[calc(100dvh-9rem)]">
           <div class="flex flex-col gap-3 border-b border-gray-200 px-5 py-4 dark:border-dark-700 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 class="text-base font-semibold text-gray-900 dark:text-white">{{ t('imageWorkbench.results') }}</h2>
@@ -171,8 +159,8 @@
             </div>
           </div>
 
-          <div class="p-5">
-            <div v-if="generating" class="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
+          <div class="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
+            <div v-if="generating" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
               <div
                 v-for="index in skeletonCount"
                 :key="index"
@@ -180,7 +168,7 @@
               />
             </div>
 
-            <div v-else-if="results.length === 0" class="flex min-h-[430px] items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 dark:border-dark-600 dark:bg-dark-900">
+            <div v-else-if="results.length === 0" class="flex min-h-[430px] items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 dark:border-dark-600 dark:bg-dark-900 xl:min-h-full">
               <EmptyState
                 :title="t('imageWorkbench.emptyCanvasTitle')"
                 :description="t('imageWorkbench.emptyCanvasDescription')"
@@ -192,7 +180,7 @@
               </EmptyState>
             </div>
 
-            <div v-else class="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
+            <div v-else class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
               <article
                 v-for="image in results"
                 :key="image.id"
@@ -244,13 +232,13 @@
           </div>
         </section>
 
-        <aside class="rounded-lg border border-gray-200 bg-white dark:border-dark-700 dark:bg-dark-800 xl:sticky xl:top-5 xl:h-fit">
+        <aside class="flex min-h-0 flex-col rounded-lg border border-gray-200 bg-white dark:border-dark-700 dark:bg-dark-800 xl:max-h-[calc(100dvh-9rem)]">
           <div class="border-b border-gray-200 px-5 py-4 dark:border-dark-700">
             <h2 class="text-base font-semibold text-gray-900 dark:text-white">{{ t('imageWorkbench.iteration') }}</h2>
             <p class="mt-1 text-sm text-gray-500 dark:text-dark-300">{{ t('imageWorkbench.iterationHint') }}</p>
           </div>
 
-          <div class="space-y-5 px-5 py-5">
+          <div class="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5">
             <div v-if="selectedImage" class="space-y-4">
               <div class="aspect-square overflow-hidden rounded-lg border border-gray-200 bg-gray-50 dark:border-dark-700 dark:bg-dark-900">
                 <img :src="selectedImage.src" :alt="selectedImage.prompt" class="h-full w-full object-contain" />
@@ -332,7 +320,6 @@ import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } 
 import { useI18n } from 'vue-i18n'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
-import Input from '@/components/common/Input.vue'
 import Select, { type SelectOption } from '@/components/common/Select.vue'
 import TextArea from '@/components/common/TextArea.vue'
 import Icon from '@/components/icons/Icon.vue'
@@ -349,8 +336,6 @@ import {
 } from '@/utils/imageWorkbench'
 
 interface WorkbenchForm {
-  background: string
-  model: string
   n: number
   output_format: string
   prompt: string
@@ -365,7 +350,6 @@ interface ReferenceFile {
 }
 
 interface WorkbenchImage extends GeneratedWorkbenchImage {
-  background: string
   createdAt: string
   endpoint: 'generations' | 'edits'
   id: string
@@ -380,9 +364,8 @@ const STORAGE_PARAMS = 'image_workbench_params'
 const STORAGE_SELECTED_KEY = 'image_workbench_selected_key_id'
 const STORAGE_HISTORY = 'image_workbench_history'
 const HISTORY_LIMIT = 12
+const IMAGE_WORKBENCH_MODEL = 'gpt-image-2'
 const DEFAULT_FORM: WorkbenchForm = {
-  background: 'auto',
-  model: 'gpt-image-2',
   n: 1,
   output_format: 'png',
   prompt: '',
@@ -444,11 +427,6 @@ const qualityOptions = computed<SelectOption[]>(() => [
   { value: 'high', label: t('imageWorkbench.qualityHigh') }
 ])
 const formatOptions: SelectOption[] = ['png', 'jpeg', 'webp'].map((value) => ({ value, label: value.toUpperCase() }))
-const backgroundOptions = computed<SelectOption[]>(() => [
-  { value: 'auto', label: t('imageWorkbench.auto') },
-  { value: 'opaque', label: t('imageWorkbench.backgroundOpaque') },
-  { value: 'transparent', label: t('imageWorkbench.backgroundTransparent') }
-])
 const remixActions = computed(() => [
   {
     key: 'variation',
@@ -475,8 +453,6 @@ function restoreParams() {
     const raw = localStorage.getItem(STORAGE_PARAMS)
     if (raw) {
       const saved = JSON.parse(raw) as Partial<WorkbenchForm>
-      form.background = typeof saved.background === 'string' ? saved.background : DEFAULT_FORM.background
-      form.model = typeof saved.model === 'string' && saved.model.trim() ? saved.model : DEFAULT_FORM.model
       form.n = Math.min(Math.max(Number(saved.n) || DEFAULT_FORM.n, 1), 4)
       form.output_format = typeof saved.output_format === 'string' ? saved.output_format : DEFAULT_FORM.output_format
       form.prompt = typeof saved.prompt === 'string' ? saved.prompt : DEFAULT_FORM.prompt
@@ -579,11 +555,10 @@ function toWorkbenchImages(images: GeneratedWorkbenchImage[], endpoint: 'generat
   const now = new Date().toISOString()
   return images.map((image, index) => ({
     ...image,
-    background: form.background,
     createdAt: now,
     endpoint,
     id: `${Date.now()}-${index}-${Math.random().toString(36).slice(2, 8)}`,
-    model: form.model,
+    model: IMAGE_WORKBENCH_MODEL,
     outputFormat: form.output_format,
     prompt: form.prompt.trim(),
     quality: form.quality,
@@ -616,20 +591,39 @@ async function submit() {
       ...form,
       apiKey: selectedKey.value.key,
       image: referenceFiles.value.map((item) => item.file),
+      n: 1,
       prompt: form.prompt.trim()
     }
-    const result = endpoint === 'edits' ? await editImage(request) : await generateImage(request)
-    const images = toWorkbenchImages(result.images, endpoint)
+    const requestCount = form.n
+    const responses = await Promise.allSettled(
+      Array.from({ length: requestCount }, () => (
+        endpoint === 'edits' ? editImage(request) : generateImage(request)
+      ))
+    )
+    const failed = responses.filter((result) => result.status === 'rejected')
+    const images = toWorkbenchImages(
+      responses.flatMap((result) => result.status === 'fulfilled' ? result.value.images : []),
+      endpoint
+    )
 
     if (!images.length) {
-      appStore.showError(t('imageWorkbench.noImagesReturned'))
+      const firstError = failed[0]
+      appStore.showError(
+        firstError?.status === 'rejected' && firstError.reason instanceof Error
+          ? firstError.reason.message
+          : t('imageWorkbench.noImagesReturned')
+      )
       return
     }
 
     results.value = images
     selectedImageId.value = images[0]?.id || null
     addToHistory(images)
-    appStore.showSuccess(t('imageWorkbench.generateSuccess'))
+    if (failed.length) {
+      appStore.showWarning(t('imageWorkbench.partialGenerateSuccess', { count: images.length, failed: failed.length }))
+    } else {
+      appStore.showSuccess(t('imageWorkbench.generateSuccess'))
+    }
   } catch (error) {
     appStore.showError(error instanceof Error ? error.message : t('imageWorkbench.generateFailed'))
   } finally {
@@ -700,11 +694,9 @@ function restoreHistory(item: WorkbenchImage) {
   results.value = [item]
   selectedImageId.value = item.id
   form.prompt = item.prompt
-  form.model = item.model || DEFAULT_FORM.model
   form.size = item.size || DEFAULT_FORM.size
   form.quality = item.quality || DEFAULT_FORM.quality
   form.output_format = item.outputFormat || DEFAULT_FORM.output_format
-  form.background = item.background || DEFAULT_FORM.background
 }
 
 function clearHistory() {

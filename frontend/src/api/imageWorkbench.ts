@@ -7,15 +7,15 @@ import {
 
 export interface ImageWorkbenchRequest {
   apiKey: string
-  background: string
   image?: File[]
-  model: string
   n: number
   output_format: string
   prompt: string
   quality: string
   size: string
 }
+
+const IMAGE_WORKBENCH_MODEL = 'gpt-image-2'
 
 async function parseResponsePayload(response: Response): Promise<unknown> {
   const contentType = response.headers.get('content-type') || ''
@@ -65,8 +65,7 @@ function buildHeaders(apiKey: string, contentType?: string): Record<string, stri
 
 function buildJsonPayload(request: ImageWorkbenchRequest): Record<string, unknown> {
   return {
-    background: request.background,
-    model: request.model,
+    model: IMAGE_WORKBENCH_MODEL,
     n: request.n,
     output_format: request.output_format,
     prompt: request.prompt,
