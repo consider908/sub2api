@@ -12,6 +12,7 @@ func TestMergePreservingSensitiveCreds_PreservesSensitiveWhenIncomingMissing(t *
 	existing := map[string]any{
 		"refresh_token": "rt-old",
 		"access_token":  "at-old",
+		"client_secret": "cs-old",
 		"api_key":       "sk-old",
 		"base_url":      "https://old.example.com",
 	}
@@ -24,6 +25,7 @@ func TestMergePreservingSensitiveCreds_PreservesSensitiveWhenIncomingMissing(t *
 
 	require.Equal(t, "rt-old", out["refresh_token"], "incoming 没传 refresh_token，应保留 existing")
 	require.Equal(t, "at-old", out["access_token"])
+	require.Equal(t, "cs-old", out["client_secret"])
 	require.Equal(t, "sk-old", out["api_key"])
 	require.Equal(t, "https://new.example.com", out["base_url"], "非敏感键由 incoming 决定")
 	require.Equal(t, map[string]any{"foo": "bar"}, out["model_mapping"])
@@ -32,14 +34,17 @@ func TestMergePreservingSensitiveCreds_PreservesSensitiveWhenIncomingMissing(t *
 func TestMergePreservingSensitiveCreds_OverwritesWhenIncomingProvidesSensitive(t *testing.T) {
 	existing := map[string]any{
 		"refresh_token": "rt-old",
+		"client_secret": "cs-old",
 		"api_key":       "sk-old",
 	}
 	incoming := map[string]any{
 		"refresh_token": "rt-new",
+		"client_secret": "cs-new",
 		// 显式没传 api_key —— 应保留
 	}
 	out := MergePreservingSensitiveCreds(existing, incoming)
 	require.Equal(t, "rt-new", out["refresh_token"], "incoming 显式传入应覆盖")
+	require.Equal(t, "cs-new", out["client_secret"], "incoming 显式传入应覆盖")
 	require.Equal(t, "sk-old", out["api_key"], "incoming 没传应保留")
 }
 
@@ -82,6 +87,7 @@ func TestMergePreservingSensitiveCreds_NonSensitiveDeletionAllowed(t *testing.T)
 
 func TestIsSensitiveCredentialKey(t *testing.T) {
 	require.True(t, IsSensitiveCredentialKey("refresh_token"))
+	require.True(t, IsSensitiveCredentialKey("client_secret"))
 	require.True(t, IsSensitiveCredentialKey("api_key"))
 	require.True(t, IsSensitiveCredentialKey("private_key"))
 	require.False(t, IsSensitiveCredentialKey("base_url"))

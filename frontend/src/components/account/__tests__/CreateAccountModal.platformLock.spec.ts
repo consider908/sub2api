@@ -22,4 +22,42 @@ describe('CreateAccountModal platform lock', () => {
     expect(componentSource).not.toContain("@click=\"form.platform = 'gemini'\"")
     expect(componentSource).not.toContain("@click=\"form.platform = 'antigravity'\"")
   })
+
+  it('keeps Kiro account creation fixed to OAuth authorization methods', () => {
+    expect(componentSource).not.toContain('<!-- Kiro account type selection -->')
+    expect(componentSource).not.toContain("form.platform === 'kiro' && accountCategory === 'apikey'")
+    expect(componentSource).not.toContain("{{ t('admin.accounts.types.kiroApikey') }}")
+    expect(componentSource).not.toContain("{{ t('admin.accounts.oauth.kiro.oauthProviderTitle') }}")
+    expect(componentSource).toContain("kiroAuthMethod = 'google'")
+    expect(componentSource).toContain("kiroAuthMethod = 'github'")
+    expect(componentSource).toContain("kiroAuthMethod = 'idc'")
+    expect(componentSource).toContain("kiroAuthMethod = 'import'")
+  })
+
+  it('exposes and dispatches Kiro refresh-token creation', () => {
+    expect(componentSource).toContain(":show-refresh-token-option=\"form.platform === 'openai' || form.platform === 'antigravity' || form.platform === 'kiro'\"")
+    expect(componentSource).toContain("} else if (form.platform === 'kiro') {\n    handleKiroValidateRT(rt)")
+    expect(componentSource).toContain('const handleKiroValidateRT = async')
+    expect(componentSource).toContain('const credentials = buildKiroCredentials(tokenInfo)')
+    expect(componentSource).toContain("platform: 'kiro'")
+    expect(componentSource).toContain("type: 'oauth'")
+  })
+
+  it('collects IDC client credentials before Kiro refresh-token validation', () => {
+    expect(componentSource).toContain('const kiroIDCClientId = ref')
+    expect(componentSource).toContain('const kiroIDCClientSecret = ref')
+    expect(componentSource).toContain('showKiroIDCRefreshTokenFields')
+    expect(componentSource).toContain('v-model="kiroIDCClientId"')
+    expect(componentSource).toContain('v-model="kiroIDCClientSecret"')
+    expect(componentSource).toContain('clientId: isIDC ? idcClientId : undefined')
+    expect(componentSource).toContain('clientSecret: isIDC ? idcClientSecret : undefined')
+  })
+
+  it('blocks Kiro IDC refresh-token validation when required fields are missing', () => {
+    expect(componentSource).toContain("kiroOAuth.error.value = t('admin.accounts.oauth.kiro.pleaseEnterRefreshToken')")
+    expect(componentSource).toContain("kiroOAuth.error.value = t('admin.accounts.oauth.kiro.pleaseEnterClientId')")
+    expect(componentSource).toContain("kiroOAuth.error.value = t('admin.accounts.oauth.kiro.pleaseEnterClientSecret')")
+    expect(componentSource).toContain("appStore.showError(kiroOAuth.error.value)")
+    expect(componentSource).toContain('return')
+  })
 })
