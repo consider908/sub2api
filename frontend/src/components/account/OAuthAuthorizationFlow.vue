@@ -132,6 +132,8 @@
               </p>
             </div>
 
+            <slot name="refresh-token-extra" :input-method="inputMethod" />
+
             <!-- Error Message -->
             <div
               v-if="error"

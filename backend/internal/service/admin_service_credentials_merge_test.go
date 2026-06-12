@@ -37,6 +37,7 @@ func TestUpdateAccount_PreservesSensitiveCredsWhenIncomingOmits(t *testing.T) {
 				"refresh_token": "rt-existing",
 				"access_token":  "at-existing",
 				"id_token":      "id-existing",
+				"client_secret": "cs-existing",
 				"base_url":      "https://old.example.com",
 			},
 		},
@@ -58,6 +59,7 @@ func TestUpdateAccount_PreservesSensitiveCredsWhenIncomingOmits(t *testing.T) {
 	require.Equal(t, "rt-existing", repo.account.Credentials["refresh_token"])
 	require.Equal(t, "at-existing", repo.account.Credentials["access_token"])
 	require.Equal(t, "id-existing", repo.account.Credentials["id_token"])
+	require.Equal(t, "cs-existing", repo.account.Credentials["client_secret"])
 	// 非敏感键被替换
 	require.Equal(t, "https://new.example.com", repo.account.Credentials["base_url"])
 }
