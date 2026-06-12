@@ -697,11 +697,11 @@
             <div :class="['flex h-8 w-8 shrink-0 items-center justify-center rounded-lg', kiroAuthMethod === 'google' ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-500 dark:bg-dark-600 dark:text-gray-400']">
               <Icon name="user" size="sm" />
             </div>
-            <div class="min-w-0">
-              <span class="block text-sm font-medium text-gray-900 dark:text-white">
+            <div class="min-w-0 flex-1">
+              <span class="block truncate text-sm font-medium text-gray-900 dark:text-white">
                 {{ t('admin.accounts.oauth.kiro.googleTitle') }}
               </span>
-              <span class="text-xs text-gray-500 dark:text-gray-400">
+              <span class="block truncate text-xs text-gray-500 dark:text-gray-400">
                 {{ t('admin.accounts.oauth.kiro.googleDesc') }}
               </span>
             </div>
@@ -719,11 +719,11 @@
             <div :class="['flex h-8 w-8 shrink-0 items-center justify-center rounded-lg', kiroAuthMethod === 'github' ? 'bg-slate-700 text-white dark:bg-slate-500' : 'bg-gray-100 text-gray-500 dark:bg-dark-600 dark:text-gray-400']">
               <Icon name="terminal" size="sm" />
             </div>
-            <div class="min-w-0">
-              <span class="block text-sm font-medium text-gray-900 dark:text-white">
+            <div class="min-w-0 flex-1">
+              <span class="block truncate text-sm font-medium text-gray-900 dark:text-white">
                 {{ t('admin.accounts.oauth.kiro.githubTitle') }}
               </span>
-              <span class="text-xs text-gray-500 dark:text-gray-400">
+              <span class="block truncate text-xs text-gray-500 dark:text-gray-400">
                 {{ t('admin.accounts.oauth.kiro.githubDesc') }}
               </span>
             </div>
@@ -741,11 +741,11 @@
             <div :class="['flex h-8 w-8 shrink-0 items-center justify-center rounded-lg', kiroAuthMethod === 'idc' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-500 dark:bg-dark-600 dark:text-gray-400']">
               <Icon name="cloud" size="sm" />
             </div>
-            <div class="min-w-0">
-              <span class="block text-sm font-medium text-gray-900 dark:text-white">
+            <div class="min-w-0 flex-1">
+              <span class="block truncate text-sm font-medium text-gray-900 dark:text-white">
                 {{ t('admin.accounts.oauth.kiro.idcTitle') }}
               </span>
-              <span class="text-xs text-gray-500 dark:text-gray-400">
+              <span class="block truncate text-xs text-gray-500 dark:text-gray-400">
                 {{ t('admin.accounts.oauth.kiro.idcSubtitle') }}
               </span>
             </div>
@@ -763,11 +763,11 @@
             <div :class="['flex h-8 w-8 shrink-0 items-center justify-center rounded-lg', kiroAuthMethod === 'import' ? 'bg-slate-700 text-white dark:bg-slate-500' : 'bg-gray-100 text-gray-500 dark:bg-dark-600 dark:text-gray-400']">
               <Icon name="download" size="sm" />
             </div>
-            <div class="min-w-0">
-              <span class="block text-sm font-medium text-gray-900 dark:text-white">
+            <div class="min-w-0 flex-1">
+              <span class="block truncate text-sm font-medium text-gray-900 dark:text-white">
                 {{ t('admin.accounts.oauth.kiro.importTitle') }}
               </span>
-              <span class="text-xs text-gray-500 dark:text-gray-400">
+              <span class="block truncate text-xs text-gray-500 dark:text-gray-400">
                 {{ t('admin.accounts.oauth.kiro.importSubtitle') }}
               </span>
             </div>
