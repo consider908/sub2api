@@ -2403,7 +2403,10 @@ export default {
         description: '仅对当前 Kiro 分组模拟 Anthropic Prompt Cache 用量。',
         enabled: '启用模拟缓存',
         ratio: '缓存比例',
-        ratioHint: '范围 0 到 1，例如 0.5 表示只生效一半模拟缓存 token。'
+        ratioHint: '范围 0 到 1，例如 0.5 表示只生效一半模拟缓存 token。',
+        stickyRouting: '启用 Kiro 账号粘性路由',
+        stickyTTL: '粘性绑定时长（秒）',
+        stickyTTLHint: '同一会话空闲超过该时长后会重新选择账号。范围 60-86400，默认 3600。'
       },
       imagePricing: {
         title: '图片生成计费',

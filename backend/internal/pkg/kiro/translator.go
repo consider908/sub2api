@@ -111,9 +111,10 @@ type KiroBuildResult struct {
 }
 
 type KiroPayload struct {
-	ConversationState KiroConversationState `json:"conversationState"`
-	ProfileArn        string                `json:"profileArn,omitempty"`
-	InferenceConfig   *KiroInferenceConfig  `json:"inferenceConfig,omitempty"`
+	ConversationState            KiroConversationState `json:"conversationState"`
+	ProfileArn                   string                `json:"profileArn,omitempty"`
+	InferenceConfig              *KiroInferenceConfig  `json:"inferenceConfig,omitempty"`
+	AdditionalModelRequestFields map[string]any        `json:"additionalModelRequestFields,omitempty"`
 }
 
 type KiroInferenceConfig struct {
@@ -262,8 +263,34 @@ func MapModel(model string) string {
 	case "claude-haiku-4-5-20251001", "claude-haiku-4-5-20251001-thinking", "claude-haiku-4.5":
 		return "claude-haiku-4.5"
 	default:
+		normalized := normalizeClaudeVersionNumber(strings.TrimSpace(strings.ToLower(model)))
+		if normalized != strings.TrimSpace(strings.ToLower(model)) {
+			return normalized
+		}
 		return ""
 	}
+}
+
+var claudeVersionNormalizePattern = regexp.MustCompile(
+	`^(claude-(?:sonnet|haiku|opus))-(\d+)-(\d{1,2})(?:-thinking)?$`,
+)
+
+var claudeDottedVersionPattern = regexp.MustCompile(
+	`^(claude-(?:sonnet|haiku|opus))-(\d+)\.(\d{1,2})(?:-thinking)?$`,
+)
+
+func normalizeClaudeVersionNumber(model string) string {
+	base := strings.TrimSuffix(strings.TrimSpace(strings.ToLower(model)), "-thinking")
+	matches := claudeVersionNormalizePattern.FindStringSubmatch(base)
+	if matches == nil {
+		return model
+	}
+	major, _ := strconv.Atoi(matches[2])
+	minor, _ := strconv.Atoi(matches[3])
+	if major < 4 || (major == 4 && minor < 6) {
+		return model
+	}
+	return fmt.Sprintf("%s-%d.%d", matches[1], major, minor)
 }
 
 // requiresImplicitThinkingTagStripping 判断是否需要在客户端未显式请求 thinking 时
@@ -445,8 +472,9 @@ func BuildKiroPayloadWithContext(claudeBody []byte, modelID, profileArn, origin 
 			CurrentMessage:  currentMessage,
 			History:         history,
 		},
-		ProfileArn:      profileArn,
-		InferenceConfig: inferenceConfig,
+		ProfileArn:                   profileArn,
+		InferenceConfig:              inferenceConfig,
+		AdditionalModelRequestFields: buildAdditionalModelRequestFields(thinking, modelID),
 	}
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
@@ -1331,6 +1359,56 @@ func buildInjectedSystemPrompt(systemPrompt string, thinking *thinkingDirective,
 		}
 	}
 	return systemPrompt
+}
+
+func buildAdditionalModelRequestFields(thinking *thinkingDirective, modelID string) map[string]any {
+	if thinking == nil || !isOutputConfigPathModel(modelID) {
+		return nil
+	}
+	effort := strings.TrimSpace(thinking.Effort)
+	if effort == "" {
+		effort = budgetToEffort(thinking.BudgetTokens)
+	}
+	if effort == "" {
+		effort = "high"
+	}
+	switch thinking.Mode {
+	case "adaptive", "enabled":
+		return map[string]any{
+			"thinking": map[string]any{
+				"type":    "adaptive",
+				"display": "summarized",
+			},
+			"output_config": map[string]any{
+				"effort": effort,
+			},
+		}
+	default:
+		return nil
+	}
+}
+
+func isOutputConfigPathModel(modelID string) bool {
+	normalized := normalizeClaudeVersionNumber(strings.ToLower(strings.TrimSpace(modelID)))
+	if matches := claudeDottedVersionPattern.FindStringSubmatch(normalized); matches != nil {
+		major, _ := strconv.Atoi(matches[2])
+		minor, _ := strconv.Atoi(matches[3])
+		return major > 4 || (major == 4 && minor >= 6)
+	}
+	return false
+}
+
+func budgetToEffort(budgetTokens int) string {
+	switch {
+	case budgetTokens <= 0:
+		return "high"
+	case budgetTokens < 8000:
+		return "low"
+	case budgetTokens < 20000:
+		return "medium"
+	default:
+		return "high"
+	}
 }
 
 func extractClaudeToolChoiceHint(claudeBody []byte, requestCtx *KiroRequestContext) string {

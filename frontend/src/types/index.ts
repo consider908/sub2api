@@ -529,6 +529,8 @@ export interface Group {
   require_oauth_only: boolean
   require_privacy_set: boolean
   kiro_cache_emulation_enabled: boolean
+  kiro_auto_sticky_enabled: boolean
+  kiro_sticky_session_ttl_seconds: number
   kiro_cache_emulation_ratio: number
   created_at: string
   updated_at: string
@@ -653,6 +655,8 @@ export interface CreateGroupRequest {
   require_oauth_only?: boolean
   require_privacy_set?: boolean
   kiro_cache_emulation_enabled?: boolean
+  kiro_auto_sticky_enabled?: boolean
+  kiro_sticky_session_ttl_seconds?: number
   kiro_cache_emulation_ratio?: number
   // 从指定分组复制账号
   copy_accounts_from_group_ids?: number[]
@@ -690,6 +694,8 @@ export interface UpdateGroupRequest {
   require_oauth_only?: boolean
   require_privacy_set?: boolean
   kiro_cache_emulation_enabled?: boolean
+  kiro_auto_sticky_enabled?: boolean
+  kiro_sticky_session_ttl_seconds?: number
   kiro_cache_emulation_ratio?: number
   copy_accounts_from_group_ids?: number[]
 }

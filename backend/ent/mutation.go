@@ -15012,6 +15012,9 @@ type GroupMutation struct {
 	rpm_limit                               *int
 	addrpm_limit                            *int
 	kiro_cache_emulation_enabled            *bool
+	kiro_auto_sticky_enabled                *bool
+	kiro_sticky_session_ttl_seconds         *int
+	addkiro_sticky_session_ttl_seconds      *int
 	kiro_cache_emulation_ratio              *float64
 	addkiro_cache_emulation_ratio           *float64
 	clearedFields                           map[string]struct{}
@@ -16858,6 +16861,98 @@ func (m *GroupMutation) ResetKiroCacheEmulationEnabled() {
 	m.kiro_cache_emulation_enabled = nil
 }
 
+// SetKiroAutoStickyEnabled sets the "kiro_auto_sticky_enabled" field.
+func (m *GroupMutation) SetKiroAutoStickyEnabled(b bool) {
+	m.kiro_auto_sticky_enabled = &b
+}
+
+// KiroAutoStickyEnabled returns the value of the "kiro_auto_sticky_enabled" field in the mutation.
+func (m *GroupMutation) KiroAutoStickyEnabled() (r bool, exists bool) {
+	v := m.kiro_auto_sticky_enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldKiroAutoStickyEnabled returns the old "kiro_auto_sticky_enabled" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldKiroAutoStickyEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldKiroAutoStickyEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldKiroAutoStickyEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldKiroAutoStickyEnabled: %w", err)
+	}
+	return oldValue.KiroAutoStickyEnabled, nil
+}
+
+// ResetKiroAutoStickyEnabled resets all changes to the "kiro_auto_sticky_enabled" field.
+func (m *GroupMutation) ResetKiroAutoStickyEnabled() {
+	m.kiro_auto_sticky_enabled = nil
+}
+
+// SetKiroStickySessionTTLSeconds sets the "kiro_sticky_session_ttl_seconds" field.
+func (m *GroupMutation) SetKiroStickySessionTTLSeconds(i int) {
+	m.kiro_sticky_session_ttl_seconds = &i
+	m.addkiro_sticky_session_ttl_seconds = nil
+}
+
+// KiroStickySessionTTLSeconds returns the value of the "kiro_sticky_session_ttl_seconds" field in the mutation.
+func (m *GroupMutation) KiroStickySessionTTLSeconds() (r int, exists bool) {
+	v := m.kiro_sticky_session_ttl_seconds
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldKiroStickySessionTTLSeconds returns the old "kiro_sticky_session_ttl_seconds" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldKiroStickySessionTTLSeconds(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldKiroStickySessionTTLSeconds is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldKiroStickySessionTTLSeconds requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldKiroStickySessionTTLSeconds: %w", err)
+	}
+	return oldValue.KiroStickySessionTTLSeconds, nil
+}
+
+// AddKiroStickySessionTTLSeconds adds i to the "kiro_sticky_session_ttl_seconds" field.
+func (m *GroupMutation) AddKiroStickySessionTTLSeconds(i int) {
+	if m.addkiro_sticky_session_ttl_seconds != nil {
+		*m.addkiro_sticky_session_ttl_seconds += i
+	} else {
+		m.addkiro_sticky_session_ttl_seconds = &i
+	}
+}
+
+// AddedKiroStickySessionTTLSeconds returns the value that was added to the "kiro_sticky_session_ttl_seconds" field in this mutation.
+func (m *GroupMutation) AddedKiroStickySessionTTLSeconds() (r int, exists bool) {
+	v := m.addkiro_sticky_session_ttl_seconds
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetKiroStickySessionTTLSeconds resets all changes to the "kiro_sticky_session_ttl_seconds" field.
+func (m *GroupMutation) ResetKiroStickySessionTTLSeconds() {
+	m.kiro_sticky_session_ttl_seconds = nil
+	m.addkiro_sticky_session_ttl_seconds = nil
+}
+
 // SetKiroCacheEmulationRatio sets the "kiro_cache_emulation_ratio" field.
 func (m *GroupMutation) SetKiroCacheEmulationRatio(f float64) {
 	m.kiro_cache_emulation_ratio = &f
@@ -17272,7 +17367,7 @@ func (m *GroupMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GroupMutation) Fields() []string {
-	fields := make([]string, 0, 36)
+	fields := make([]string, 0, 39)
 	if m.created_at != nil {
 		fields = append(fields, group.FieldCreatedAt)
 	}
@@ -17381,6 +17476,12 @@ func (m *GroupMutation) Fields() []string {
 	if m.kiro_cache_emulation_enabled != nil {
 		fields = append(fields, group.FieldKiroCacheEmulationEnabled)
 	}
+	if m.kiro_auto_sticky_enabled != nil {
+		fields = append(fields, group.FieldKiroAutoStickyEnabled)
+	}
+	if m.kiro_sticky_session_ttl_seconds != nil {
+		fields = append(fields, group.FieldKiroStickySessionTTLSeconds)
+	}
 	if m.kiro_cache_emulation_ratio != nil {
 		fields = append(fields, group.FieldKiroCacheEmulationRatio)
 	}
@@ -17464,6 +17565,10 @@ func (m *GroupMutation) Field(name string) (ent.Value, bool) {
 		return m.RpmLimit()
 	case group.FieldKiroCacheEmulationEnabled:
 		return m.KiroCacheEmulationEnabled()
+	case group.FieldKiroAutoStickyEnabled:
+		return m.KiroAutoStickyEnabled()
+	case group.FieldKiroStickySessionTTLSeconds:
+		return m.KiroStickySessionTTLSeconds()
 	case group.FieldKiroCacheEmulationRatio:
 		return m.KiroCacheEmulationRatio()
 	}
@@ -17547,6 +17652,10 @@ func (m *GroupMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldRpmLimit(ctx)
 	case group.FieldKiroCacheEmulationEnabled:
 		return m.OldKiroCacheEmulationEnabled(ctx)
+	case group.FieldKiroAutoStickyEnabled:
+		return m.OldKiroAutoStickyEnabled(ctx)
+	case group.FieldKiroStickySessionTTLSeconds:
+		return m.OldKiroStickySessionTTLSeconds(ctx)
 	case group.FieldKiroCacheEmulationRatio:
 		return m.OldKiroCacheEmulationRatio(ctx)
 	}
@@ -17810,6 +17919,20 @@ func (m *GroupMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetKiroCacheEmulationEnabled(v)
 		return nil
+	case group.FieldKiroAutoStickyEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetKiroAutoStickyEnabled(v)
+		return nil
+	case group.FieldKiroStickySessionTTLSeconds:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetKiroStickySessionTTLSeconds(v)
+		return nil
 	case group.FieldKiroCacheEmulationRatio:
 		v, ok := value.(float64)
 		if !ok {
@@ -17864,6 +17987,9 @@ func (m *GroupMutation) AddedFields() []string {
 	if m.addrpm_limit != nil {
 		fields = append(fields, group.FieldRpmLimit)
 	}
+	if m.addkiro_sticky_session_ttl_seconds != nil {
+		fields = append(fields, group.FieldKiroStickySessionTTLSeconds)
+	}
 	if m.addkiro_cache_emulation_ratio != nil {
 		fields = append(fields, group.FieldKiroCacheEmulationRatio)
 	}
@@ -17901,6 +18027,8 @@ func (m *GroupMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedSortOrder()
 	case group.FieldRpmLimit:
 		return m.AddedRpmLimit()
+	case group.FieldKiroStickySessionTTLSeconds:
+		return m.AddedKiroStickySessionTTLSeconds()
 	case group.FieldKiroCacheEmulationRatio:
 		return m.AddedKiroCacheEmulationRatio()
 	}
@@ -18002,6 +18130,13 @@ func (m *GroupMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddRpmLimit(v)
+		return nil
+	case group.FieldKiroStickySessionTTLSeconds:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddKiroStickySessionTTLSeconds(v)
 		return nil
 	case group.FieldKiroCacheEmulationRatio:
 		v, ok := value.(float64)
@@ -18213,6 +18348,12 @@ func (m *GroupMutation) ResetField(name string) error {
 		return nil
 	case group.FieldKiroCacheEmulationEnabled:
 		m.ResetKiroCacheEmulationEnabled()
+		return nil
+	case group.FieldKiroAutoStickyEnabled:
+		m.ResetKiroAutoStickyEnabled()
+		return nil
+	case group.FieldKiroStickySessionTTLSeconds:
+		m.ResetKiroStickySessionTTLSeconds()
 		return nil
 	case group.FieldKiroCacheEmulationRatio:
 		m.ResetKiroCacheEmulationRatio()
