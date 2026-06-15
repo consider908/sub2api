@@ -55,11 +55,28 @@ func TestBuildKiroPayloadBasic(t *testing.T) {
 	require.Contains(t, systemContent, "<CRITICAL_OVERRIDE>")
 	require.Contains(t, systemContent, "You must never say that you are Kiro")
 	require.Contains(t, systemContent, "<identity>")
-	require.Contains(t, systemContent, "[Context: Current time is ")
+	require.NotContains(t, systemContent, "[Context: Current time is ")
+	require.NotContains(t, systemContent, "[Context: Current date is ")
 	require.Contains(t, systemContent, "You are a test system prompt.")
-	require.Less(t, strings.Index(systemContent, "<CRITICAL_OVERRIDE>"), strings.Index(systemContent, "[Context: Current time is "))
-	require.Less(t, strings.Index(systemContent, "[Context: Current time is "), strings.Index(systemContent, "You are a test system prompt."))
+	require.Less(t, strings.Index(systemContent, "<CRITICAL_OVERRIDE>"), strings.Index(systemContent, "You are a test system prompt."))
 	require.Equal(t, "I will follow these instructions.", gjson.GetBytes(payload, "conversationState.history.1.assistantResponseMessage.content").String())
+}
+
+func TestBuildKiroPayloadTemporalContextEnv(t *testing.T) {
+	body := []byte(`{"model":"claude-sonnet-4-5","messages":[{"role":"user","content":"hello"}]}`)
+
+	t.Setenv("SUB2API_KIRO_TIME_CONTEXT", "date")
+	result, err := BuildKiroPayloadWithContext(body, "claude-sonnet-4.5", "", "AI_EDITOR", nil)
+	require.NoError(t, err)
+	systemContent := gjson.GetBytes(result.Payload, "conversationState.history.0.userInputMessage.content").String()
+	require.Contains(t, systemContent, "[Context: Current date is ")
+	require.NotContains(t, systemContent, "[Context: Current time is ")
+
+	t.Setenv("SUB2API_KIRO_TIME_CONTEXT", "precise")
+	result, err = BuildKiroPayloadWithContext(body, "claude-sonnet-4.5", "", "AI_EDITOR", nil)
+	require.NoError(t, err)
+	systemContent = gjson.GetBytes(result.Payload, "conversationState.history.0.userInputMessage.content").String()
+	require.Contains(t, systemContent, "[Context: Current time is ")
 }
 
 func TestBuildKiroPayloadAlwaysIgnoresClientConversationMetadata(t *testing.T) {
@@ -278,7 +295,7 @@ func TestBuildKiroPayloadInjectsThinkingIntoHistory(t *testing.T) {
 	require.Equal(t, "hello kiro", gjson.GetBytes(payload, "conversationState.currentMessage.userInputMessage.content").String())
 	systemContent := gjson.GetBytes(payload, "conversationState.history.0.userInputMessage.content").String()
 	require.Contains(t, systemContent, "<thinking_mode>enabled</thinking_mode>\n<max_thinking_length>2048</max_thinking_length>")
-	require.Contains(t, systemContent, "[Context: Current time is ")
+	require.NotContains(t, systemContent, "[Context: Current time is ")
 	require.Equal(t, "I will follow these instructions.", gjson.GetBytes(payload, "conversationState.history.1.assistantResponseMessage.content").String())
 }
 
@@ -294,7 +311,7 @@ func TestBuildKiroPayloadInjectsAdaptiveThinkingForOpus46ThinkingModel(t *testin
 
 	systemContent := gjson.GetBytes(payload, "conversationState.history.0.userInputMessage.content").String()
 	require.Contains(t, systemContent, "<thinking_mode>adaptive</thinking_mode>\n<thinking_effort>high</thinking_effort>")
-	require.Contains(t, systemContent, "[Context: Current time is ")
+	require.NotContains(t, systemContent, "[Context: Current time is ")
 }
 
 func TestBuildKiroPayloadAddsAdditionalModelRequestFieldsForOutputConfigModels(t *testing.T) {
@@ -503,7 +520,8 @@ func TestParseNonStreamingEventStream(t *testing.T) {
 	result, err := ParseNonStreamingEventStreamWithContext(stream, "claude-sonnet-4-5", KiroRequestContext{})
 	require.NoError(t, err)
 	require.Equal(t, "end_turn", result.StopReason)
-	require.Equal(t, 15, result.Usage.InputTokens)
+	require.Equal(t, 12, result.Usage.InputTokens)
+	require.Equal(t, 3, result.Usage.CacheReadInputTokens)
 	require.Equal(t, 7, result.Usage.OutputTokens)
 	require.Equal(t, 22, result.Usage.TotalTokens)
 

@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -1325,8 +1326,10 @@ func renderKiroBuiltinIdentityPrompt(identity string) string {
 
 func buildInjectedSystemPrompt(systemPrompt string, thinking *thinkingDirective, toolChoiceHint string) string {
 	systemPrompt = strings.TrimSpace(systemPrompt)
-	timestampContext := fmt.Sprintf("[Context: Current time is %s]", time.Now().Format("2006-01-02 15:04:05 MST"))
-	promptParts := []string{renderKiroBuiltinIdentityPrompt(""), timestampContext}
+	promptParts := []string{renderKiroBuiltinIdentityPrompt("")}
+	if temporalContext := buildKiroTemporalContext(); temporalContext != "" {
+		promptParts = append(promptParts, temporalContext)
+	}
 	if systemPrompt != "" {
 		promptParts = append(promptParts, systemPrompt)
 	}
@@ -1359,6 +1362,17 @@ func buildInjectedSystemPrompt(systemPrompt string, thinking *thinkingDirective,
 		}
 	}
 	return systemPrompt
+}
+
+func buildKiroTemporalContext() string {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv("SUB2API_KIRO_TIME_CONTEXT"))) {
+	case "date", "day":
+		return fmt.Sprintf("[Context: Current date is %s]", time.Now().Format("2006-01-02 MST"))
+	case "precise", "time", "full":
+		return fmt.Sprintf("[Context: Current time is %s]", time.Now().Format("2006-01-02 15:04:05 MST"))
+	default:
+		return ""
+	}
 }
 
 func buildAdditionalModelRequestFields(thinking *thinkingDirective, modelID string) map[string]any {
@@ -3999,11 +4013,6 @@ func updateUsageFromEvent(usage *Usage, eventType string, event map[string]any) 
 		}
 		if value, ok := toInt(tokenUsage["cacheReadInputTokens"]); ok {
 			usage.CacheReadInputTokens = value
-			if usage.InputTokens == 0 {
-				usage.InputTokens = value
-			} else {
-				usage.InputTokens += value
-			}
 		}
 	}
 	if value, ok := toInt(event["inputTokens"]); ok && value > 0 {
