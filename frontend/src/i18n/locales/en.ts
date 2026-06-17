@@ -2324,7 +2324,11 @@ export default {
         ratioHint: '0 to 1. For example, 0.5 applies half of the simulated cache tokens.',
         stickyRouting: 'Enable Kiro account sticky routing',
         stickyTTL: 'Sticky binding TTL (seconds)',
-        stickyTTLHint: 'A session is rebalanced after being idle longer than this value. Range: 60-86400, default: 3600.'
+        stickyTTLHint: 'A session is rebalanced after being idle longer than this value. Range: 60-86400, default: 3600.',
+        endpointMode: 'Inference Endpoint',
+        endpointModeQ: 'AWS Q (default)',
+        endpointModeKRS: 'Kiro Runtime Service',
+        endpointModeHint: 'AWS Q uses q.{region}.amazonaws.com. Kiro Runtime Service uses runtime.us-east-1.kiro.dev.'
       },
       imagePricing: {
         title: 'Image Generation Pricing',

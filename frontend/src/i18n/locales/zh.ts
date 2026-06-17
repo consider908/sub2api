@@ -2407,7 +2407,11 @@ export default {
         ratioHint: '范围 0 到 1，例如 0.5 表示只生效一半模拟缓存 token。',
         stickyRouting: '启用 Kiro 账号粘性路由',
         stickyTTL: '粘性绑定时长（秒）',
-        stickyTTLHint: '同一会话空闲超过该时长后会重新选择账号。范围 60-86400，默认 3600。'
+        stickyTTLHint: '同一会话空闲超过该时长后会重新选择账号。范围 60-86400，默认 3600。',
+        endpointMode: '推理 Endpoint',
+        endpointModeQ: 'AWS Q（默认）',
+        endpointModeKRS: 'Kiro Runtime Service',
+        endpointModeHint: 'AWS Q 使用 q.{region}.amazonaws.com；Kiro Runtime Service 使用 runtime.us-east-1.kiro.dev。'
       },
       imagePricing: {
         title: '图片生成计费',

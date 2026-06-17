@@ -642,6 +642,14 @@
           <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">
             {{ t("admin.groups.kiroCache.description") }}
           </p>
+          <div class="mb-4">
+            <label class="input-label">{{ t("admin.groups.kiroCache.endpointMode") }}</label>
+            <select v-model="createForm.kiro_endpoint_mode" class="input">
+              <option value="q">{{ t("admin.groups.kiroCache.endpointModeQ") }}</option>
+              <option value="krs">{{ t("admin.groups.kiroCache.endpointModeKRS") }}</option>
+            </select>
+            <p class="input-hint">{{ t("admin.groups.kiroCache.endpointModeHint") }}</p>
+          </div>
           <label class="mb-4 flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
             <input
               v-model="createForm.kiro_auto_sticky_enabled"
@@ -1969,6 +1977,14 @@
           <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">
             {{ t("admin.groups.kiroCache.description") }}
           </p>
+          <div class="mb-4">
+            <label class="input-label">{{ t("admin.groups.kiroCache.endpointMode") }}</label>
+            <select v-model="editForm.kiro_endpoint_mode" class="input">
+              <option value="q">{{ t("admin.groups.kiroCache.endpointModeQ") }}</option>
+              <option value="krs">{{ t("admin.groups.kiroCache.endpointModeKRS") }}</option>
+            </select>
+            <p class="input-hint">{{ t("admin.groups.kiroCache.endpointModeHint") }}</p>
+          </div>
           <label class="mb-4 flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
             <input
               v-model="editForm.kiro_auto_sticky_enabled"
@@ -3465,6 +3481,7 @@ const createForm = reactive({
   kiro_auto_sticky_enabled: true,
   kiro_sticky_session_ttl_seconds: 3600,
   kiro_cache_emulation_ratio: 1,
+  kiro_endpoint_mode: "q",
 });
 
 // 简单账号类型（用于模型路由选择）
@@ -3802,6 +3819,7 @@ const editForm = reactive({
   kiro_auto_sticky_enabled: true,
   kiro_sticky_session_ttl_seconds: 3600,
   kiro_cache_emulation_ratio: 1,
+  kiro_endpoint_mode: "q",
 });
 
 type ImagePricingFormState = {
@@ -4043,6 +4061,7 @@ const closeCreateModal = () => {
   createForm.kiro_auto_sticky_enabled = true;
   createForm.kiro_sticky_session_ttl_seconds = 3600;
   createForm.kiro_cache_emulation_ratio = 1;
+  createForm.kiro_endpoint_mode = "q";
   resetModelsListState(createModelsListState);
   createModelRoutingRules.value = [];
 };
@@ -4084,6 +4103,10 @@ const normalizeKiroStickySessionTTL = (
     return 3600;
   }
   return Math.min(86400, Math.max(60, Math.trunc(seconds)));
+};
+
+const normalizeKiroEndpointMode = (value: string | null | undefined): string => {
+  return value === "krs" ? "krs" : "q";
 };
 
 const handleCreateGroup = async () => {
@@ -4137,9 +4160,13 @@ const handleCreateGroup = async () => {
       requestData.kiro_sticky_session_ttl_seconds = 0;
       requestData.kiro_cache_emulation_enabled = false;
       requestData.kiro_cache_emulation_ratio = 0;
+      requestData.kiro_endpoint_mode = "q";
     } else {
       requestData.kiro_sticky_session_ttl_seconds = normalizeKiroStickySessionTTL(
         requestData.kiro_sticky_session_ttl_seconds,
+      );
+      requestData.kiro_endpoint_mode = normalizeKiroEndpointMode(
+        requestData.kiro_endpoint_mode,
       );
     }
     await adminAPI.groups.create(requestData);
@@ -4211,6 +4238,7 @@ const handleEdit = async (group: AdminGroup) => {
     group.kiro_sticky_session_ttl_seconds ?? 3600;
   editForm.kiro_cache_emulation_enabled = group.kiro_cache_emulation_enabled ?? false;
   editForm.kiro_cache_emulation_ratio = group.kiro_cache_emulation_ratio ?? 1;
+  editForm.kiro_endpoint_mode = normalizeKiroEndpointMode(group.kiro_endpoint_mode);
   resetModelsListState(editModelsListState, group.models_list_config);
   // 加载模型路由规则（异步加载账号名称）
   editModelRoutingRules.value = await convertApiFormatToRoutingRules(
@@ -4292,9 +4320,13 @@ const handleUpdateGroup = async () => {
       payload.kiro_sticky_session_ttl_seconds = 0;
       payload.kiro_cache_emulation_enabled = false;
       payload.kiro_cache_emulation_ratio = 0;
+      payload.kiro_endpoint_mode = "q";
     } else {
       payload.kiro_sticky_session_ttl_seconds = normalizeKiroStickySessionTTL(
         payload.kiro_sticky_session_ttl_seconds,
+      );
+      payload.kiro_endpoint_mode = normalizeKiroEndpointMode(
+        payload.kiro_endpoint_mode,
       );
     }
     await adminAPI.groups.update(editingGroup.value.id, payload);
@@ -4392,10 +4424,15 @@ watch(
       createForm.require_privacy_set = false;
     }
     if (newVal === "kiro") {
+      createForm.kiro_endpoint_mode = normalizeKiroEndpointMode(
+        createForm.kiro_endpoint_mode,
+      );
       createForm.kiro_auto_sticky_enabled = true;
       createForm.kiro_sticky_session_ttl_seconds = normalizeKiroStickySessionTTL(
         createForm.kiro_sticky_session_ttl_seconds,
       );
+    } else {
+      createForm.kiro_endpoint_mode = "q";
     }
     resetModelsListState(createModelsListState);
     loadModelsListCandidates("create", 0, newVal);
@@ -4416,10 +4453,15 @@ watch(
       editForm.require_privacy_set = false;
     }
     if (newVal === "kiro") {
+      editForm.kiro_endpoint_mode = normalizeKiroEndpointMode(
+        editForm.kiro_endpoint_mode,
+      );
       editForm.kiro_auto_sticky_enabled = true;
       editForm.kiro_sticky_session_ttl_seconds = normalizeKiroStickySessionTTL(
         editForm.kiro_sticky_session_ttl_seconds,
       );
+    } else {
+      editForm.kiro_endpoint_mode = "q";
     }
     if (editingGroup.value) {
       resetModelsListState(editModelsListState, editForm.platform === editingGroup.value.platform ? editingGroup.value.models_list_config : undefined);

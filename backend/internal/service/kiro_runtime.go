@@ -365,7 +365,7 @@ func (s *GatewayService) executeKiroUpstreamWithParsed(ctx context.Context, acco
 	requestCtx = buildResult.Context
 	logKiroStatelessReplay(account, buildResult.Payload)
 
-	endpoints := buildKiroEndpoints(account)
+	endpoints := buildKiroEndpoints(account, kiroEndpointModeForRequest(parsed))
 	proxyURL := kiroProxyURL(account)
 	tlsProfile := s.tlsFPProfileService.ResolveTLSProfile(account)
 	accountKey := buildKiroAccountKey(account)
@@ -513,7 +513,17 @@ func (s *GatewayService) executeKiroUpstreamWithParsed(ctx context.Context, acco
 	return nil, requestCtx, fmt.Errorf("kiro upstream endpoints exhausted")
 }
 
-func buildKiroEndpoints(account *Account) []kiroEndpointConfig {
+const kiroKRSEndpointURL = "https://runtime.us-east-1.kiro.dev/generateAssistantResponse"
+
+func buildKiroEndpoints(account *Account, mode string) []kiroEndpointConfig {
+	if mode == KiroEndpointModeKRS {
+		return []kiroEndpointConfig{
+			{
+				URL:  kiroKRSEndpointURL,
+				Name: "KiroRuntime",
+			},
+		}
+	}
 	region := kiroAPIRegion(account)
 	return []kiroEndpointConfig{
 		{
@@ -521,6 +531,13 @@ func buildKiroEndpoints(account *Account) []kiroEndpointConfig {
 			Name: "AmazonQ",
 		},
 	}
+}
+
+func kiroEndpointModeForRequest(parsed *ParsedRequest) string {
+	if parsed == nil || parsed.Group == nil {
+		return KiroEndpointModeQ
+	}
+	return parsed.Group.EffectiveKiroEndpointMode()
 }
 
 func (s *GatewayService) buildKiroPayloadForAccount(ctx context.Context, account *Account, parsed *ParsedRequest, anthropicBody []byte, modelID, token, requestModel string, headers http.Header) (*kiropkg.KiroBuildResult, error) {

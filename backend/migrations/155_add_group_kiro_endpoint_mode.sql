@@ -1,0 +1,1 @@
+ALTER TABLE groups ADD COLUMN IF NOT EXISTS kiro_endpoint_mode VARCHAR(8) NOT NULL DEFAULT 'q';

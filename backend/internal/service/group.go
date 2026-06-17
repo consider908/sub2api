@@ -73,6 +73,7 @@ type Group struct {
 	KiroAutoStickyEnabled       bool
 	KiroStickySessionTTLSeconds int
 	KiroCacheEmulationRatio     float64
+	KiroEndpointMode            string
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -163,8 +164,45 @@ func normalizeKiroCacheEmulationFields(g *Group) {
 	g.KiroCacheEmulationRatio = normalizeKiroCacheEmulationRatio(g.KiroCacheEmulationRatio)
 }
 
+const (
+	KiroEndpointModeQ   = "q"
+	KiroEndpointModeKRS = "krs"
+)
+
+func (g *Group) EffectiveKiroEndpointMode() string {
+	if g == nil || g.Platform != PlatformKiro {
+		return KiroEndpointModeQ
+	}
+	switch g.KiroEndpointMode {
+	case KiroEndpointModeKRS:
+		return KiroEndpointModeKRS
+	default:
+		return KiroEndpointModeQ
+	}
+}
+
+func (g *Group) KiroKRSEnabled() bool {
+	return g.EffectiveKiroEndpointMode() == KiroEndpointModeKRS
+}
+
+func normalizeKiroEndpointFields(g *Group) {
+	if g == nil {
+		return
+	}
+	if g.Platform != PlatformKiro {
+		g.KiroEndpointMode = ""
+		return
+	}
+	switch g.KiroEndpointMode {
+	case KiroEndpointModeKRS:
+	default:
+		g.KiroEndpointMode = KiroEndpointModeQ
+	}
+}
+
 func NormalizeGroupRuntimeFields(g *Group) {
 	normalizeKiroCacheEmulationFields(g)
+	normalizeKiroEndpointFields(g)
 }
 
 func (g *Group) IsActive() bool {

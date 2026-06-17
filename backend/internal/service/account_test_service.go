@@ -477,7 +477,7 @@ func (s *AccountTestService) executeKiroTestUpstream(ctx context.Context, accoun
 	}
 	payload := buildResult.Payload
 
-	endpoints := buildKiroEndpoints(account)
+	endpoints := buildKiroEndpoints(account, KiroEndpointModeQ)
 	proxyURL := kiroProxyURL(account)
 	tlsProfile := s.tlsFPProfileService.ResolveTLSProfile(account)
 	accountKey := buildKiroAccountKey(account)

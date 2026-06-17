@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/rand"
+	"os"
 	"runtime"
 	"strings"
 	"sync"
@@ -197,6 +198,18 @@ func fingerprintLookupKey(accountKey, fallback string) string {
 		return key
 	}
 	return fallback
+}
+
+var kiroIDEUserAgentVersion = func() string {
+	if v := strings.TrimSpace(os.Getenv("KIRO_IDE_VERSION")); v != "" {
+		return v
+	}
+	return "0.12.301"
+}()
+
+func BuildKiroIDERuntimeUserAgent(accountKey, machineID string) string {
+	fp := globalRuntimeFingerprints().Get(accountKey, machineID)
+	return fmt.Sprintf("KiroIDE %s %s", kiroIDEUserAgentVersion, fp.KiroHash)
 }
 
 func BuildRuntimeUserAgent(accountKey, machineID string) string {
