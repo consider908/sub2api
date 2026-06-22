@@ -2660,6 +2660,9 @@ func (s *adminServiceImpl) CreateAccount(ctx context.Context, input *CreateAccou
 		if err := validateAccountCustomHeadersFromExtra(account.Extra); err != nil {
 			return nil, err
 		}
+		if err := ValidateKiroCreditUnitPriceFromExtra(account.Extra); err != nil {
+			return nil, err
+		}
 		NormalizeFixedQuotaWindows(account.Extra)
 	}
 	if input.ExpiresAt != nil && *input.ExpiresAt > 0 {
@@ -2770,6 +2773,9 @@ func (s *adminServiceImpl) UpdateAccount(ctx context.Context, id int64, input *U
 		}
 		ComputeQuotaResetAt(account.Extra)
 		if err := validateAccountCustomHeadersFromExtra(account.Extra); err != nil {
+			return nil, err
+		}
+		if err := ValidateKiroCreditUnitPriceFromExtra(account.Extra); err != nil {
 			return nil, err
 		}
 		NormalizeFixedQuotaWindows(account.Extra)

@@ -275,3 +275,26 @@ func TestImportDataReusesProxyAndSkipsDefaultGroup(t *testing.T) {
 	require.Len(t, adminSvc.createdAccounts, 1)
 	require.True(t, adminSvc.createdAccounts[0].SkipDefaultGroupBind)
 }
+
+func TestImportDataRejectsKiroAccountManagerMissingRefreshToken(t *testing.T) {
+	router, _ := setupAccountDataRouter()
+
+	body, _ := json.Marshal(map[string]any{
+		"data": []map[string]any{
+			{
+				"accessToken": "access-only",
+				"authMethod":  "social",
+				"provider":    "google",
+			},
+		},
+	})
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/admin/accounts/data", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusOK, rec.Code)
+	require.Contains(t, rec.Body.String(), "\"account_failed\":1")
+	require.Contains(t, rec.Body.String(), "Kiro 导入需要 refreshToken")
+}
