@@ -160,7 +160,11 @@ Additional Kiro-focused features in this fork:
 
 <tr>
 <td width="180"><a href="https://sub.666api.ai"><img src="assets/partners/logos/666api.jpg" alt="666api" width="150"></a></td>
-<td>Thanks to 666api for sponsoring this project! <a href="https://sub.666api.ai">sub.666api.ai</a> is an all-in-one platform offering: ⚡ API Relay — Pay-as-you-go access to global models sourced 100% from official providers, up to 75% off official pricing Exclusive: Zhipu GLM 50% off · DeepSeek V4-pro 50% off · Seedance2.0 8% off (whitelisted) · HappyHorse Overseas 30% off (whitelisted) 🔑 GPT Subscription Accounts — same-origin IP included · Global Residential IP 💰 Invoices supported
+<td>Thanks to 666api for sponsoring this project! <a href="https://sub.666api.ai">sub.666api.ai</a> is an all-in-one platform offering:<br>
+⚡ API Relay — Pay-as-you-go access to global models sourced 100% from official providers, up to 75% off official pricing<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Exclusive: Zhipu GLM 50% off · DeepSeek V4-pro 50% off · Seedance 2.0 8% off (whitelisted) · HappyHorse Overseas 30% off (whitelisted)<br>
+🔑 GPT Subscription Accounts (same-origin IP included) · Global Residential IP <br>
+💰 Invoices supported
 </td>
 </tr>
 
