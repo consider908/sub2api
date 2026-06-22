@@ -296,5 +296,5 @@ func TestImportDataRejectsKiroAccountManagerMissingRefreshToken(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, rec.Code)
 	require.Contains(t, rec.Body.String(), "\"account_failed\":1")
-	require.Contains(t, rec.Body.String(), "Kiro 导入需要 refreshToken")
+	require.Contains(t, rec.Body.String(), "kiro 导入需要 refreshToken")
 }
