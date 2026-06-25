@@ -42,6 +42,19 @@
   </Teleport>
 </template>
 
+<script lang="ts">
+const modalLockState = {
+  count: 0,
+}
+
+export function __resetBaseDialogModalLockForTests() {
+  modalLockState.count = 0
+  if (typeof document !== 'undefined') {
+    document.body.classList.remove('modal-open')
+  }
+}
+</script>
+
 <script setup lang="ts">
 import { computed, watch, onMounted, onUnmounted, ref, nextTick } from 'vue'
 import Icon from '@/components/icons/Icon.vue'
@@ -53,6 +66,7 @@ const dialogId = `modal-title-${++dialogIdCounter}`
 // 焦点管理
 const dialogRef = ref<HTMLElement | null>(null)
 let previousActiveElement: HTMLElement | null = null
+let hasBodyScrollLock = false
 
 type DialogWidth = 'narrow' | 'normal' | 'wide' | 'extra-wide' | 'full'
 
@@ -111,6 +125,24 @@ const handleEscape = (event: KeyboardEvent) => {
   }
 }
 
+function acquireBodyScrollLock() {
+  if (hasBodyScrollLock || typeof document === 'undefined') return
+  if (modalLockState.count === 0) {
+    document.body.classList.add('modal-open')
+  }
+  modalLockState.count += 1
+  hasBodyScrollLock = true
+}
+
+function releaseBodyScrollLock() {
+  if (!hasBodyScrollLock || typeof document === 'undefined') return
+  modalLockState.count = Math.max(0, modalLockState.count - 1)
+  hasBodyScrollLock = false
+  if (modalLockState.count === 0) {
+    document.body.classList.remove('modal-open')
+  }
+}
+
 // Prevent body scroll when modal is open and manage focus
 watch(
   () => props.show,
@@ -118,8 +150,8 @@ watch(
     if (isOpen) {
       // 保存当前焦点元素
       previousActiveElement = document.activeElement as HTMLElement
-      // 使用CSS类而不是直接操作style,更易于管理多个对话框
-      document.body.classList.add('modal-open')
+      // 使用全局引用计数，支持嵌套弹窗共享 body 滚动锁
+      acquireBodyScrollLock()
 
       // 等待DOM更新后设置焦点到对话框
       await nextTick()
@@ -130,7 +162,7 @@ watch(
         firstFocusable?.focus()
       }
     } else {
-      document.body.classList.remove('modal-open')
+      releaseBodyScrollLock()
       // 恢复之前的焦点
       if (previousActiveElement && typeof previousActiveElement.focus === 'function') {
         previousActiveElement.focus()
@@ -147,7 +179,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   document.removeEventListener('keydown', handleEscape)
-  // 确保组件卸载时移除滚动锁定
-  document.body.classList.remove('modal-open')
+  // 确保组件卸载时正确释放当前实例持有的滚动锁
+  releaseBodyScrollLock()
 })
 </script>
