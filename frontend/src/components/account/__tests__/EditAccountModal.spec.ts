@@ -624,4 +624,43 @@ describe('EditAccountModal', () => {
 
     expect(updateAccountMock).not.toHaveBeenCalled()
   })
+
+  it('loads and submits Antigravity configured project fallback', async () => {
+    const account = buildAntigravityAccount('configured-project')
+    updateAccountMock.mockReset()
+    checkMixedChannelRiskMock.mockReset()
+    checkMixedChannelRiskMock.mockResolvedValue({ has_risk: false })
+    updateAccountMock.mockResolvedValue(account)
+
+    const wrapper = mountModal(account)
+    const input = wrapper.get<HTMLInputElement>('[data-testid="antigravity-project-id-input"]')
+    expect(input.element.value).toBe('configured-project')
+
+    await input.setValue('  updated-project  ')
+    await wrapper.get('form#edit-account-form').trigger('submit.prevent')
+
+    expect(updateAccountMock).toHaveBeenCalledTimes(1)
+    expect(updateAccountMock.mock.calls[0]?.[1]?.credentials?.antigravity_project_id).toBe(
+      'updated-project'
+    )
+  })
+
+  it('clears Antigravity configured project fallback when input is empty', async () => {
+    const account = buildAntigravityAccount('configured-project')
+    updateAccountMock.mockReset()
+    checkMixedChannelRiskMock.mockReset()
+    checkMixedChannelRiskMock.mockResolvedValue({ has_risk: false })
+    updateAccountMock.mockResolvedValue(account)
+
+    const wrapper = mountModal(account)
+    const input = wrapper.get<HTMLInputElement>('[data-testid="antigravity-project-id-input"]')
+
+    await input.setValue('')
+    await wrapper.get('form#edit-account-form').trigger('submit.prevent')
+
+    expect(updateAccountMock).toHaveBeenCalledTimes(1)
+    expect(updateAccountMock.mock.calls[0]?.[1]?.credentials).not.toHaveProperty(
+      'antigravity_project_id'
+    )
+  })
 })

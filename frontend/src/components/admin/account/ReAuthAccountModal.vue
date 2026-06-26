@@ -437,6 +437,7 @@ const currentAuthUrl = computed(() => {
   if (isGemini.value) return geminiOAuth.authUrl.value
   if (isKiro.value) return kiroOAuth.authUrl.value
   if (isAntigravity.value) return antigravityOAuth.authUrl.value
+  if (isGrok.value) return grokOAuth.authUrl.value
   return claudeOAuth.authUrl.value
 })
 
@@ -445,6 +446,7 @@ const currentSessionId = computed(() => {
   if (isGemini.value) return geminiOAuth.sessionId.value
   if (isKiro.value) return kiroOAuth.sessionId.value
   if (isAntigravity.value) return antigravityOAuth.sessionId.value
+  if (isGrok.value) return grokOAuth.sessionId.value
   return claudeOAuth.sessionId.value
 })
 
@@ -453,6 +455,7 @@ const currentLoading = computed(() => {
   if (isGemini.value) return geminiOAuth.loading.value
   if (isKiro.value) return kiroOAuth.loading.value
   if (isAntigravity.value) return antigravityOAuth.loading.value
+  if (isGrok.value) return grokOAuth.loading.value
   return claudeOAuth.loading.value
 })
 
@@ -461,6 +464,7 @@ const currentError = computed(() => {
   if (isGemini.value) return geminiOAuth.error.value
   if (isKiro.value) return kiroOAuth.error.value
   if (isAntigravity.value) return antigravityOAuth.error.value
+  if (isGrok.value) return grokOAuth.error.value
   return claudeOAuth.error.value
 })
 

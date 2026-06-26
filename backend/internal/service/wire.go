@@ -126,6 +126,15 @@ func ProvideOpenAIQuotaService(
 	return NewOpenAIQuotaService(accountRepo, proxyRepo, tokenProvider, privacyClientFactory)
 }
 
+func ProvideGrokQuotaService(
+	accountRepo AccountRepository,
+	proxyRepo ProxyRepository,
+	tokenProvider *GrokTokenProvider,
+	httpUpstream HTTPUpstream,
+) *GrokQuotaService {
+	return NewGrokQuotaService(accountRepo, proxyRepo, tokenProvider, httpUpstream)
+}
+
 // ProvideGeminiTokenProvider creates GeminiTokenProvider with OAuthRefreshAPI injection
 func ProvideGeminiTokenProvider(
 	accountRepo AccountRepository,
@@ -175,6 +184,7 @@ func ProvideAccountUsageService(
 	usageFetcher ClaudeUsageFetcher,
 	geminiQuotaService *GeminiQuotaService,
 	antigravityQuotaFetcher *AntigravityQuotaFetcher,
+	grokQuotaFetcher *GrokQuotaFetcher,
 	cache *UsageCache,
 	identityCache IdentityCache,
 	tlsFPProfileService *TLSFingerprintProfileService,
@@ -189,11 +199,28 @@ func ProvideAccountUsageService(
 		cache,
 		identityCache,
 		tlsFPProfileService,
+		grokQuotaFetcher,
 	).SetKiroTokenProvider(kiroTokenProvider)
 }
 
 func ProvideKiroCooldownStore(redisClient *redis.Client) KiroCooldownStore {
 	return kirocooldown.NewStore(redisClient)
+}
+
+// ProvideGrokTokenProvider creates GrokTokenProvider with OAuthRefreshAPI injection.
+func ProvideGrokTokenProvider(
+	accountRepo AccountRepository,
+	tokenCache GeminiTokenCache,
+	grokOAuthService *GrokOAuthService,
+	refreshAPI *OAuthRefreshAPI,
+	tempUnschedCache TempUnschedCache,
+) *GrokTokenProvider {
+	p := NewGrokTokenProvider(accountRepo, tokenCache)
+	executor := NewGrokTokenRefresher(grokOAuthService)
+	p.SetRefreshAPI(refreshAPI, executor)
+	p.SetRefreshPolicy(AntigravityProviderRefreshPolicy())
+	p.SetTempUnschedCache(tempUnschedCache)
+	return p
 }
 
 // ProvideDashboardAggregationService 创建并启动仪表盘聚合服务
@@ -519,6 +546,12 @@ func ProvideSettingService(settingRepo SettingRepository, groupRepo GroupReposit
 	if err := svc.LoadAPIKeyACLTrustForwardedIPSetting(context.Background()); err != nil {
 		logger.LegacyPrintf("service.setting", "Warning: load api key acl forwarded ip setting failed: %v", err)
 	}
+	if err := svc.MigrateOpenAIAllowClaudeCodeCodexPluginSetting(context.Background()); err != nil {
+		logger.LegacyPrintf("service.setting", "Warning: migrate openai allow Claude Code Codex plugin setting failed: %v", err)
+	}
+	if err := svc.MigrateCodexBodyFingerprintToSignals(context.Background()); err != nil {
+		logger.LegacyPrintf("service.setting", "Warning: migrate codex body fingerprint to signals failed: %v", err)
+	}
 	antigravity.SetUserAgentVersionResolver(svc.GetAntigravityUserAgentVersion)
 	return svc
 }
@@ -577,6 +610,7 @@ var ProviderSet = wire.NewSet(
 	wire.Bind(new(AccountRuntimeBlocker), new(*OpenAIGatewayService)),
 	NewOAuthService,
 	ProvideOpenAIOAuthService,
+	NewGrokOAuthService,
 	NewGeminiOAuthService,
 	NewGeminiQuotaService,
 	NewCompositeTokenCacheInvalidator,
@@ -589,8 +623,10 @@ var ProviderSet = wire.NewSet(
 	ProvideKiroCooldownStore,
 	NewGeminiMessagesCompatService,
 	ProvideAntigravityTokenProvider,
+	ProvideGrokTokenProvider,
 	ProvideOpenAITokenProvider,
 	ProvideOpenAIQuotaService,
+	ProvideGrokQuotaService,
 	ProvideClaudeTokenProvider,
 	NewAntigravityGatewayService,
 	ProvideRateLimitService,
@@ -628,6 +664,7 @@ var ProviderSet = wire.NewSet(
 	ProvideUsageCleanupService,
 	ProvideDeferredService,
 	NewAntigravityQuotaFetcher,
+	NewGrokQuotaFetcher,
 	NewUserAttributeService,
 	NewUsageCache,
 	NewTotpService,
