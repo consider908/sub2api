@@ -112,18 +112,21 @@ func sessionExpired(session *AuthSession, now time.Time) bool {
 }
 
 type TokenData struct {
-	AccessToken  string `json:"accessToken"`
-	RefreshToken string `json:"refreshToken"`
-	ProfileArn   string `json:"profileArn,omitempty"`
-	ExpiresAt    string `json:"expiresAt,omitempty"`
-	AuthMethod   string `json:"authMethod,omitempty"`
-	Provider     string `json:"provider,omitempty"`
-	ClientID     string `json:"clientId,omitempty"`
-	ClientSecret string `json:"clientSecret,omitempty"`
-	ClientIDHash string `json:"clientIdHash,omitempty"`
-	Email        string `json:"email,omitempty"`
-	StartURL     string `json:"startUrl,omitempty"`
-	Region       string `json:"region,omitempty"`
+	AccessToken   string `json:"accessToken"`
+	RefreshToken  string `json:"refreshToken"`
+	ProfileArn    string `json:"profileArn,omitempty"`
+	ExpiresAt     string `json:"expiresAt,omitempty"`
+	AuthMethod    string `json:"authMethod,omitempty"`
+	Provider      string `json:"provider,omitempty"`
+	ClientID      string `json:"clientId,omitempty"`
+	ClientSecret  string `json:"clientSecret,omitempty"`
+	ClientIDHash  string `json:"clientIdHash,omitempty"`
+	TokenEndpoint string `json:"tokenEndpoint,omitempty"`
+	IssuerURL     string `json:"issuerUrl,omitempty"`
+	Scopes        string `json:"scopes,omitempty"`
+	Email         string `json:"email,omitempty"`
+	StartURL      string `json:"startUrl,omitempty"`
+	Region        string `json:"region,omitempty"`
 }
 
 type socialTokenResponse struct {
@@ -386,6 +389,85 @@ func RefreshIDCToken(ctx context.Context, proxyURL, clientID, clientSecret, refr
 	return token, nil
 }
 
+func RefreshExternalIDPToken(ctx context.Context, proxyURL, clientID, refreshToken, tokenEndpoint, scopes string) (*TokenData, error) {
+	clientID = strings.TrimSpace(clientID)
+	refreshToken = strings.TrimSpace(refreshToken)
+	tokenEndpoint = strings.TrimSpace(tokenEndpoint)
+	scopes = strings.TrimSpace(scopes)
+	if clientID == "" {
+		return nil, fmt.Errorf("external_idp refresh requires client_id")
+	}
+	if refreshToken == "" {
+		return nil, fmt.Errorf("external_idp refresh requires refresh_token")
+	}
+	if tokenEndpoint == "" {
+		return nil, fmt.Errorf("external_idp refresh requires token_endpoint")
+	}
+
+	values := url.Values{}
+	values.Set("grant_type", "refresh_token")
+	values.Set("client_id", clientID)
+	values.Set("refresh_token", refreshToken)
+	if scopes != "" {
+		values.Set("scope", scopes)
+	}
+
+	client, err := newHTTPClient(proxyURL)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, tokenEndpoint, strings.NewReader(values.Encode()))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		bodyText := strings.TrimSpace(string(respBody))
+		if resp.StatusCode == http.StatusBadRequest && strings.Contains(strings.ToLower(bodyText), "invalid_grant") {
+			return nil, &RefreshTokenInvalidError{StatusCode: resp.StatusCode, Body: bodyText}
+		}
+		return nil, fmt.Errorf("upstream request failed (status %d): %s", resp.StatusCode, bodyText)
+	}
+
+	var respData struct {
+		AccessToken  string `json:"access_token"`
+		RefreshToken string `json:"refresh_token"`
+		ExpiresIn    int    `json:"expires_in"`
+	}
+	if err := json.Unmarshal(respBody, &respData); err != nil {
+		return nil, err
+	}
+	if respData.ExpiresIn <= 0 {
+		respData.ExpiresIn = 3600
+	}
+	if strings.TrimSpace(respData.RefreshToken) == "" {
+		respData.RefreshToken = refreshToken
+	}
+
+	return &TokenData{
+		AccessToken:   respData.AccessToken,
+		RefreshToken:  respData.RefreshToken,
+		ExpiresAt:     time.Now().Add(time.Duration(respData.ExpiresIn) * time.Second).Format(time.RFC3339),
+		AuthMethod:    "external_idp",
+		Provider:      "ExternalIdp",
+		ClientID:      clientID,
+		TokenEndpoint: tokenEndpoint,
+		Scopes:        scopes,
+	}, nil
+}
+
 func FetchOIDCUserEmail(ctx context.Context, proxyURL, accessToken, region string) string {
 	if strings.TrimSpace(accessToken) == "" {
 		return ""
@@ -406,6 +488,10 @@ func ParseImportedToken(tokenJSON string, deviceRegistrationJSON string) (*Token
 		return nil, fmt.Errorf("failed to parse kiro token: %w", err)
 	}
 	token.AuthMethod = strings.ToLower(strings.TrimSpace(token.AuthMethod))
+	token.Provider = strings.TrimSpace(token.Provider)
+	token.TokenEndpoint = strings.TrimSpace(token.TokenEndpoint)
+	token.IssuerURL = strings.TrimSpace(token.IssuerURL)
+	token.Scopes = strings.TrimSpace(token.Scopes)
 	if strings.TrimSpace(token.AccessToken) == "" {
 		return nil, fmt.Errorf("access token is empty")
 	}
@@ -423,6 +509,23 @@ func ParseImportedToken(tokenJSON string, deviceRegistrationJSON string) (*Token
 	}
 	if token.AuthMethod == "" && strings.TrimSpace(token.ClientID) != "" && strings.TrimSpace(token.ClientSecret) != "" {
 		token.AuthMethod = "idc"
+	}
+	if token.AuthMethod == "external_idp" {
+		if strings.TrimSpace(token.RefreshToken) == "" {
+			return nil, fmt.Errorf("external_idp refresh token is required")
+		}
+		if strings.TrimSpace(token.ClientID) == "" {
+			return nil, fmt.Errorf("external_idp clientId is required")
+		}
+		if token.TokenEndpoint == "" {
+			return nil, fmt.Errorf("external_idp tokenEndpoint is required")
+		}
+		if token.Scopes == "" {
+			token.Scopes = "offline_access"
+		}
+		if token.Provider == "" {
+			token.Provider = "ExternalIdp"
+		}
 	}
 	if token.AuthMethod == "idc" {
 		if strings.TrimSpace(token.Provider) == "" {

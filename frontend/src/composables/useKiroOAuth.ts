@@ -112,6 +112,9 @@ export function useKiroOAuth() {
     provider?: string
     clientId?: string
     clientSecret?: string
+    tokenEndpoint?: string
+    issuerUrl?: string
+    scopes?: string
     startUrl?: string
     region?: string
     profileArn?: string
@@ -126,6 +129,9 @@ export function useKiroOAuth() {
         provider: payload.provider,
         client_id: payload.clientId,
         client_secret: payload.clientSecret,
+        token_endpoint: payload.tokenEndpoint,
+        issuer_url: payload.issuerUrl,
+        scopes: payload.scopes,
         start_url: payload.startUrl,
         region: payload.region,
         profile_arn: payload.profileArn,
@@ -169,6 +175,9 @@ export function useKiroOAuth() {
     client_id: tokenInfo.client_id,
     client_secret: tokenInfo.client_secret,
     client_id_hash: tokenInfo.client_id_hash,
+    token_endpoint: tokenInfo.token_endpoint,
+    issuer_url: tokenInfo.issuer_url,
+    scopes: tokenInfo.scopes,
     email: tokenInfo.email,
     start_url: tokenInfo.start_url,
     region: tokenInfo.region
