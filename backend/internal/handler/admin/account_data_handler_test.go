@@ -276,7 +276,7 @@ func TestImportDataReusesProxyAndSkipsDefaultGroup(t *testing.T) {
 	require.True(t, adminSvc.createdAccounts[0].SkipDefaultGroupBind)
 }
 
-func TestImportDataRejectsKiroAccountManagerMissingRefreshToken(t *testing.T) {
+func TestImportDataRejectsKiroAccountManagerJSON(t *testing.T) {
 	router, _ := setupAccountDataRouter()
 
 	body, _ := json.Marshal(map[string]any{
@@ -294,7 +294,6 @@ func TestImportDataRejectsKiroAccountManagerMissingRefreshToken(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json")
 	router.ServeHTTP(rec, req)
 
-	require.Equal(t, http.StatusOK, rec.Code)
-	require.Contains(t, rec.Body.String(), "\"account_failed\":1")
-	require.Contains(t, rec.Body.String(), "kiro 导入需要 refreshToken")
+	require.Equal(t, http.StatusBadRequest, rec.Code)
+	require.Contains(t, rec.Body.String(), "unsupported data format: expected sub2api data export object")
 }

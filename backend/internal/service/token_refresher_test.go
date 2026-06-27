@@ -227,6 +227,49 @@ func TestClaudeTokenRefresher_CanRefresh(t *testing.T) {
 	}
 }
 
+func TestKiroTokenRefresher_NeedsRefreshRequiresRefreshToken(t *testing.T) {
+	refresher := &KiroTokenRefresher{}
+	refreshWindow := 30 * time.Minute
+
+	tests := []struct {
+		name        string
+		credentials map[string]any
+		want        bool
+	}{
+		{
+			name: "missing expires_at with refresh token",
+			credentials: map[string]any{
+				"refresh_token": "refresh-token",
+			},
+			want: true,
+		},
+		{
+			name:        "missing expires_at without refresh token",
+			credentials: map[string]any{},
+			want:        false,
+		},
+		{
+			name: "expired without refresh token",
+			credentials: map[string]any{
+				"expires_at": time.Now().Add(-time.Hour).Format(time.RFC3339),
+			},
+			want: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			account := &Account{
+				Platform:    PlatformKiro,
+				Type:        AccountTypeOAuth,
+				Credentials: tt.credentials,
+			}
+
+			require.Equal(t, tt.want, refresher.NeedsRefresh(account, refreshWindow))
+		})
+	}
+}
+
 func TestOpenAITokenRefresher_CanRefresh(t *testing.T) {
 	refresher := &OpenAITokenRefresher{}
 

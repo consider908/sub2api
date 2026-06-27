@@ -49,3 +49,10 @@ func TestKiroOAuthService_ExchangeCodeRejectsExpiredSession(t *testing.T) {
 	})
 	require.EqualError(t, err, "session not found or expired")
 }
+
+func TestResolveKiroRefreshAuthMethodInfersIDCFromClientCredentials(t *testing.T) {
+	require.Equal(t, "idc", resolveKiroRefreshAuthMethod("", "client-id", "client-secret"))
+	require.Equal(t, "social", resolveKiroRefreshAuthMethod("", "client-id", ""))
+	require.Equal(t, "social", resolveKiroRefreshAuthMethod("Social", "client-id", "client-secret"))
+	require.Equal(t, "idc", resolveKiroRefreshAuthMethod("IDC", "", ""))
+}

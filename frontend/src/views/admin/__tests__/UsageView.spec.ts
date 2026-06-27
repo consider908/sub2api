@@ -3,7 +3,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 
 import UsageView from '../UsageView.vue'
 
-const { list, getStats, getSnapshotV2, getById, getModelStats, listErrorLogs } = vi.hoisted(() => {
+const { list, getStats, getSnapshotV2, getById, getModelStats, listErrorLogs, clearErrorLogs } = vi.hoisted(() => {
   vi.stubGlobal('localStorage', {
     getItem: vi.fn(() => null),
     setItem: vi.fn(),
@@ -17,6 +17,7 @@ const { list, getStats, getSnapshotV2, getById, getModelStats, listErrorLogs } =
     getById: vi.fn(),
     getModelStats: vi.fn(),
     listErrorLogs: vi.fn(),
+    clearErrorLogs: vi.fn(),
   }
 })
 
@@ -58,6 +59,7 @@ vi.mock('@/api/admin/usage', () => ({
 
 vi.mock('@/api/admin/ops', () => ({
   listErrorLogs,
+  clearErrorLogs,
 }))
 
 vi.mock('@/stores/app', () => ({
@@ -303,6 +305,7 @@ describe('admin UsageView errors tab filter forwarding', () => {
     getSnapshotV2.mockReset()
     getModelStats.mockReset()
     listErrorLogs.mockReset()
+    clearErrorLogs.mockReset()
 
     list.mockResolvedValue({ items: [], total: 0, pages: 0 })
     getStats.mockResolvedValue({
@@ -312,6 +315,7 @@ describe('admin UsageView errors tab filter forwarding', () => {
     getSnapshotV2.mockResolvedValue({ trend: [], models: [], groups: [] })
     getModelStats.mockResolvedValue({ models: [] })
     listErrorLogs.mockResolvedValue({ items: [], total: 0, pages: 0 })
+    clearErrorLogs.mockResolvedValue({ deleted_rows: 0 })
   })
 
   afterEach(() => {
@@ -350,5 +354,42 @@ describe('admin UsageView errors tab filter forwarding', () => {
       account_id: 7,
       group_id: 3,
     }))
+  })
+
+  it('clears error logs with current filters and without pagination', async () => {
+    clearErrorLogs.mockResolvedValueOnce({ deleted_rows: 2 })
+    const wrapper = mount(UsageView, {
+      global: { stubs: {
+        AppLayout: AppLayoutStub, UsageStatsCards: true, UsageFilters: UsageFiltersStub,
+        UsageTable: true, UsageExportProgress: true, UsageCleanupDialog: true,
+        UserBalanceHistoryModal: true, AuditLogModal: true, Pagination: true, Select: true,
+        DateRangePicker: true, Icon: true, TokenUsageTrend: true,
+        ModelDistributionChart: true, GroupDistributionChart: true, EndpointDistributionChart: true,
+        OpsErrorLogTable: true, OpsErrorDetailModal: true, ConfirmDialog: true,
+      } },
+    })
+    vi.advanceTimersByTime(120)
+    await flushPromises()
+
+    const vm = wrapper.vm as any
+    vm.filters.model = 'gpt-5.3-codex'
+    vm.filters.account_id = 7
+    vm.filters.group_id = 3
+    await wrapper.findAll('button.tab')[1].trigger('click')
+    await flushPromises()
+    listErrorLogs.mockClear()
+
+    await vm.confirmClearErrorLogs()
+    await flushPromises()
+
+    expect(clearErrorLogs).toHaveBeenCalledWith(expect.objectContaining({
+      view: 'all',
+      model: 'gpt-5.3-codex',
+      account_id: 7,
+      group_id: 3,
+    }))
+    expect(clearErrorLogs.mock.calls[0][0]).not.toHaveProperty('page')
+    expect(clearErrorLogs.mock.calls[0][0]).not.toHaveProperty('page_size')
+    expect(listErrorLogs).toHaveBeenCalledTimes(1)
   })
 })

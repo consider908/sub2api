@@ -167,6 +167,45 @@ func TestOpsServiceCleanupSystemLogs_InvalidRange(t *testing.T) {
 	}
 }
 
+func TestOpsServiceDeleteErrorLogs_ValidationAndSuccess(t *testing.T) {
+	repo := &opsRepoMock{}
+	svc := NewOpsService(repo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+
+	if _, err := svc.DeleteErrorLogs(context.Background(), nil); err == nil {
+		t.Fatalf("expected required time range error")
+	}
+
+	start := time.Now().UTC()
+	end := start.Add(-time.Hour)
+	if _, err := svc.DeleteErrorLogs(context.Background(), &OpsErrorLogFilter{
+		StartTime: &start,
+		EndTime:   &end,
+	}); err == nil {
+		t.Fatalf("expected invalid time range error")
+	}
+
+	var gotFilter *OpsErrorLogFilter
+	repo.DeleteErrorLogsFn = func(ctx context.Context, filter *OpsErrorLogFilter) (int64, error) {
+		gotFilter = filter
+		return 4, nil
+	}
+	end = start.Add(time.Hour)
+	deleted, err := svc.DeleteErrorLogs(context.Background(), &OpsErrorLogFilter{
+		StartTime: &start,
+		EndTime:   &end,
+		Model:     "claude-sonnet",
+	})
+	if err != nil {
+		t.Fatalf("DeleteErrorLogs() error: %v", err)
+	}
+	if deleted != 4 {
+		t.Fatalf("deleted=%d, want 4", deleted)
+	}
+	if gotFilter == nil || gotFilter.Model != "claude-sonnet" {
+		t.Fatalf("repository filter not forwarded: %+v", gotFilter)
+	}
+}
+
 func TestOpsServiceCleanupSystemLogs_NoRowsAndInternalError(t *testing.T) {
 	repo := &opsRepoMock{
 		DeleteSystemLogsFn: func(ctx context.Context, filter *OpsSystemLogCleanupFilter) (int64, error) {
