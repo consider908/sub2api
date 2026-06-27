@@ -26,4 +26,17 @@ describe('GroupBadge', () => {
     expect(wrapper.html()).toContain('text-violet-700')
     expect(wrapper.html()).not.toContain('text-amber-700')
   })
+
+  it('Grok 分组徽章使用 slate 主题', () => {
+    const wrapper = mount(GroupBadge, {
+      props: {
+        name: 'grok pro',
+        platform: 'grok',
+        rateMultiplier: 1
+      }
+    })
+
+    expect(wrapper.html()).toContain('bg-zinc-50')
+    expect(wrapper.html()).toContain('text-zinc-700')
+  })
 })

@@ -167,6 +167,8 @@ type providerAdapter struct {
 //nolint:gochecknoglobals // 适配器表是只读静态数据，初始化后不变更。
 var providerAdapters = map[string]providerAdapter{
 	MonitorProviderOpenAI: providerOpenAIChatAdapter,
+	// Grok uses the xAI OpenAI-compatible chat/completions protocol for monitor checks.
+	MonitorProviderGrok: providerOpenAIChatAdapter,
 	MonitorProviderAnthropic: {
 		buildPath: func(string) string { return providerAnthropicPath },
 		buildBody: func(model, prompt string) ([]byte, error) {

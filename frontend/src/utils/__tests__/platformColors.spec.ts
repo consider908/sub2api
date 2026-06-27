@@ -13,4 +13,10 @@ describe('platformColors', () => {
     expect(platformGradientClass('kiro')).toContain('to-fuchsia-500')
     expect(platformBadgeClass('kiro')).not.toContain('orange')
   })
+
+  it('Grok 平台使用独立 slate 主题', () => {
+    expect(platformBadgeClass('grok')).toContain('slate')
+    expect(platformTextClass('grok')).toContain('slate')
+    expect(platformGradientClass('grok')).toContain('from-slate-500')
+  })
 })

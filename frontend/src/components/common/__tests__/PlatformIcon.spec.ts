@@ -20,4 +20,15 @@ describe('PlatformIcon', () => {
     expect(wrapper.html()).toContain('M398.554 818.914')
     expect(wrapper.html()).not.toContain('m3.127 10.604')
   })
+
+  it('Grok 使用独立图标', () => {
+    const wrapper = mount(PlatformIcon, {
+      props: {
+        platform: 'grok'
+      }
+    })
+
+    expect(getSvgViewBox(wrapper)).toBe('0 0 24 24')
+    expect(wrapper.html()).toContain('M4 18 18 4')
+  })
 })

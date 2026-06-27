@@ -3480,6 +3480,7 @@ const oauthStepTitle = computed(() => {
   if (form.platform === 'openai') return t('admin.accounts.oauth.openai.title')
   if (form.platform === 'gemini') return t('admin.accounts.oauth.gemini.title')
   if (form.platform === 'antigravity') return t('admin.accounts.oauth.antigravity.title')
+  if (form.platform === 'grok') return t('admin.accounts.oauth.grok.title')
   if (form.platform === 'kiro') {
     return kiroAuthMethod.value === 'import'
       ? t('admin.accounts.oauth.kiro.importDialogTitle')

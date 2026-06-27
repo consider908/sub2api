@@ -53,4 +53,20 @@ describe('OAuthAuthorizationFlow', () => {
     expect((wrapper.vm as any).oauthCallbackPath).toBe('/oauth/callback')
     expect((wrapper.vm as any).oauthLoginOption).toBe('github')
   })
+
+  it('uses Grok-specific OAuth title keys', () => {
+    const wrapper = mount(OAuthAuthorizationFlow, {
+      props: {
+        addMethod: 'oauth',
+        platform: 'grok',
+      },
+      global: {
+        stubs: {
+          Icon: true,
+        },
+      },
+    })
+
+    expect(wrapper.text()).toContain('admin.accounts.oauth.grok.title')
+  })
 })

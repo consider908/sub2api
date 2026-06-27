@@ -1097,7 +1097,9 @@ export default {
     providers: {
       openai: 'OpenAI',
       anthropic: 'Anthropic',
-      gemini: 'Gemini'
+      gemini: 'Gemini',
+      kiro: 'Kiro',
+      grok: 'Grok'
     },
     extraModelsHeader: '附加模型',
     extraModelsEmpty: '无附加模型',
@@ -2334,6 +2336,7 @@ export default {
         gemini: 'Gemini',
         antigravity: 'Antigravity',
         kiro: 'Kiro',
+        grok: 'Grok',
       },
       saving: '保存中...',
       noGroups: '暂无分组',
@@ -3417,6 +3420,7 @@ export default {
         gemini: 'Gemini',
         antigravity: 'Antigravity',
         kiro: 'Kiro',
+        grok: 'Grok',
       },
       types: {
         oauth: 'OAuth',

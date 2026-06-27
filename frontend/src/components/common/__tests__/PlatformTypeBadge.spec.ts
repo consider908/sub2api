@@ -53,4 +53,17 @@ describe('PlatformTypeBadge', () => {
 
     expect(wrapper.text()).not.toContain('Overage')
   })
+
+  it('renders Grok with its own slate theme', () => {
+    const wrapper = mount(PlatformTypeBadge, {
+      props: {
+        platform: 'grok',
+        type: 'oauth',
+      }
+    })
+
+    expect(wrapper.text()).toContain('Grok')
+    expect(wrapper.html()).toContain('bg-slate-100')
+    expect(wrapper.html()).not.toContain('bg-orange-100')
+  })
 })

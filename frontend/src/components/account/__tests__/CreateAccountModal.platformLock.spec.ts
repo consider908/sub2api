@@ -53,6 +53,10 @@ describe('CreateAccountModal platform lock', () => {
     expect(componentSource).toContain('clientSecret: isIDC ? idcClientSecret : undefined')
   })
 
+  it('uses Grok OAuth title instead of Claude fallback', () => {
+    expect(componentSource).toContain("if (form.platform === 'grok') return t('admin.accounts.oauth.grok.title')")
+  })
+
   it('blocks Kiro IDC refresh-token validation when required fields are missing', () => {
     expect(componentSource).toContain("kiroOAuth.error.value = t('admin.accounts.oauth.kiro.pleaseEnterRefreshToken')")
     expect(componentSource).toContain("kiroOAuth.error.value = t('admin.accounts.oauth.kiro.pleaseEnterClientId')")
