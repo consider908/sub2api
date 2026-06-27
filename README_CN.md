@@ -161,6 +161,16 @@ Sub2API 是一个 AI API 网关平台，用于分发和管理 AI 产品订阅的
 </td>
 </tr>
 
+<tr>
+<td width="180"><a href="https://sui-xiang.com/"><img src="assets/partners/logos/sui-xiang.jpg" alt="sui-xiang" width="150"></a></td>
+<td>感谢 随想AI网关 赞助本项目！<a href="https://sui-xiang.com/">随想AI网关</a> 是一家可靠高效的 API 中继服务提供商，提供 Claude、Codex、Gemini 等的中继服务。注重隐私的中转站·无数据倒卖·无模型掺水，隐私，透明，极速售后。新账户注册每日签到就送 0.5 元测试额度，充值额度 1:1，无需订阅，按量付费。多线路冗余、跨区域容灾、自动故障切换，长链路 SSE 不中断。99.9% 可用性，关键调用从不掉队。</td>
+</tr>
+
+<tr>
+<td width="180"><a href="https://www.miyaip.com/?invitecode=sub2api"><img src="assets/partners/logos/miyaip.png" alt="miyaip" width="150"></a></td>
+<td>感谢 MiyaIP 赞助本项目！<a href="https://www.miyaip.com/?invitecode=sub2api">MiyaIP</a> 是一家专注于全球住宅代理网络服务的平台，致力于为企业开发者、跨境业务团队及 AI 应用用户提供高质量、纯净的海外住宅 IP 资源。为 AI 平台、海外 SaaS 及其他在线服务提供稳定、独立的海外网络环境，支持多地区访问测试和项目环境隔离。适用于 AI 模型平台访问、AI 开发测试、AI SaaS 服务使用、AI API 调试、多地区网络环境验证等场景。</td>
+</tr>
+
 </table>
 
 ## 生态项目
