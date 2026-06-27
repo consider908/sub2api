@@ -765,6 +765,7 @@ const adminNavItems = computed((): NavItem[] => {
         { path: '/admin/accounts/gemini', label: 'Gemini', icon: platformNavIcon('gemini') },
         { path: '/admin/accounts/antigravity', label: 'Antigravity', icon: platformNavIcon('antigravity') },
         { path: '/admin/accounts/kiro', label: 'Kiro', icon: platformNavIcon('kiro') },
+        { path: '/admin/accounts/grok', label: 'Grok', icon: platformNavIcon('grok') },
       ],
     },
     { path: '/admin/announcements', label: t('nav.announcements'), icon: BellIcon },

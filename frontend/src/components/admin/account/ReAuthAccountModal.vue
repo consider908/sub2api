@@ -109,39 +109,76 @@
         </div>
       </div>
 
-      <div v-if="isKiro" class="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-700/40 dark:bg-amber-900/20">
-        <div class="mb-3 text-sm font-medium text-amber-900 dark:text-amber-100">
-          {{ t('admin.accounts.oauth.kiro.authModeTitle') }}
-        </div>
-        <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
+      <div v-if="isKiro">
+        <label class="input-label">{{ t('admin.accounts.oauth.kiro.authModeTitle') }}</label>
+        <div class="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <button
             type="button"
-            @click="kiroAccountType = 'oauth'"
-            :class="kiroModeClass('oauth')"
+            @click="kiroAccountType = 'oauth'; kiroOAuthProvider = 'google'"
+            :class="[
+              'flex items-center gap-3 rounded-lg border-2 p-3 text-left transition-all',
+              kiroAccountType === 'oauth' && kiroOAuthProvider === 'google'
+                ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20'
+                : 'border-gray-200 hover:border-amber-300 dark:border-dark-600 dark:hover:border-amber-700'
+            ]"
           >
             <div
               :class="[
                 'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
-                kiroAccountType === 'oauth'
+                kiroAccountType === 'oauth' && kiroOAuthProvider === 'google'
                   ? 'bg-amber-500 text-white'
                   : 'bg-gray-100 text-gray-500 dark:bg-dark-600 dark:text-gray-400'
               ]"
             >
-              <Icon name="key" size="sm" />
+              <Icon name="user" size="sm" />
             </div>
-            <div class="min-w-0">
-              <span class="block text-sm font-medium text-gray-900 dark:text-white">
-                {{ t('admin.accounts.oauth.kiro.oauthTitle') }}
+            <div class="min-w-0 flex-1">
+              <span class="block truncate text-sm font-medium text-gray-900 dark:text-white">
+                {{ t('admin.accounts.oauth.kiro.googleTitle') }}
               </span>
-              <span class="text-xs text-gray-500 dark:text-gray-400">
-                {{ t('admin.accounts.oauth.kiro.oauthSubtitle') }}
+              <span class="block truncate text-xs text-gray-500 dark:text-gray-400">
+                {{ t('admin.accounts.oauth.kiro.googleDesc') }}
+              </span>
+            </div>
+          </button>
+          <button
+            type="button"
+            @click="kiroAccountType = 'oauth'; kiroOAuthProvider = 'github'"
+            :class="[
+              'flex items-center gap-3 rounded-lg border-2 p-3 text-left transition-all',
+              kiroAccountType === 'oauth' && kiroOAuthProvider === 'github'
+                ? 'border-slate-500 bg-slate-50 dark:bg-slate-900/20'
+                : 'border-gray-200 hover:border-slate-300 dark:border-dark-600 dark:hover:border-slate-700'
+            ]"
+          >
+            <div
+              :class="[
+                'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
+                kiroAccountType === 'oauth' && kiroOAuthProvider === 'github'
+                  ? 'bg-slate-700 text-white dark:bg-slate-500'
+                  : 'bg-gray-100 text-gray-500 dark:bg-dark-600 dark:text-gray-400'
+              ]"
+            >
+              <Icon name="terminal" size="sm" />
+            </div>
+            <div class="min-w-0 flex-1">
+              <span class="block truncate text-sm font-medium text-gray-900 dark:text-white">
+                {{ t('admin.accounts.oauth.kiro.githubTitle') }}
+              </span>
+              <span class="block truncate text-xs text-gray-500 dark:text-gray-400">
+                {{ t('admin.accounts.oauth.kiro.githubDesc') }}
               </span>
             </div>
           </button>
           <button
             type="button"
             @click="kiroAccountType = 'idc'"
-            :class="kiroModeClass('idc')"
+            :class="[
+              'flex items-center gap-3 rounded-lg border-2 p-3 text-left transition-all',
+              kiroAccountType === 'idc'
+                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                : 'border-gray-200 hover:border-blue-300 dark:border-dark-600 dark:hover:border-blue-700'
+            ]"
           >
             <div
               :class="[
@@ -153,11 +190,11 @@
             >
               <Icon name="cloud" size="sm" />
             </div>
-            <div class="min-w-0">
-              <span class="block text-sm font-medium text-gray-900 dark:text-white">
+            <div class="min-w-0 flex-1">
+              <span class="block truncate text-sm font-medium text-gray-900 dark:text-white">
                 {{ t('admin.accounts.oauth.kiro.idcTitle') }}
               </span>
-              <span class="text-xs text-gray-500 dark:text-gray-400">
+              <span class="block truncate text-xs text-gray-500 dark:text-gray-400">
                 {{ t('admin.accounts.oauth.kiro.idcSubtitle') }}
               </span>
             </div>
@@ -165,7 +202,12 @@
           <button
             type="button"
             @click="kiroAccountType = 'import'"
-            :class="kiroModeClass('import')"
+            :class="[
+              'flex items-center gap-3 rounded-lg border-2 p-3 text-left transition-all',
+              kiroAccountType === 'import'
+                ? 'border-slate-500 bg-slate-50 dark:bg-slate-900/20'
+                : 'border-gray-200 hover:border-slate-300 dark:border-dark-600 dark:hover:border-slate-700'
+            ]"
           >
             <div
               :class="[
@@ -177,114 +219,58 @@
             >
               <Icon name="download" size="sm" />
             </div>
-            <div class="min-w-0">
-              <span class="block text-sm font-medium text-gray-900 dark:text-white">
+            <div class="min-w-0 flex-1">
+              <span class="block truncate text-sm font-medium text-gray-900 dark:text-white">
                 {{ t('admin.accounts.oauth.kiro.importTitle') }}
               </span>
-              <span class="text-xs text-gray-500 dark:text-gray-400">
+              <span class="block truncate text-xs text-gray-500 dark:text-gray-400">
                 {{ t('admin.accounts.oauth.kiro.importSubtitle') }}
               </span>
             </div>
           </button>
         </div>
+      </div>
 
-        <div v-if="kiroAccountType === 'oauth'" class="mt-3 space-y-3">
-          <div class="text-xs text-amber-800 dark:text-amber-200">
-            {{ t('admin.accounts.oauth.kiro.oauthSubtitle') }}
-          </div>
-          <div class="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              @click="kiroOAuthProvider = 'google'"
-              :class="kiroProviderClass('google')"
-            >
-              <div
-                :class="[
-                  'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
-                  kiroOAuthProvider === 'google'
-                    ? 'bg-amber-500 text-white'
-                    : 'bg-gray-100 text-gray-500 dark:bg-dark-600 dark:text-gray-400'
-                ]"
-              >
-                <Icon name="user" size="sm" />
-              </div>
-              <div class="min-w-0">
-                <span class="block text-sm font-medium text-gray-900 dark:text-white">
-                  {{ t('admin.accounts.oauth.kiro.googleTitle') }}
-                </span>
-                <span class="text-xs text-gray-500 dark:text-gray-400">
-                  {{ t('admin.accounts.oauth.kiro.googleDesc') }}
-                </span>
-              </div>
-            </button>
-            <button
-              type="button"
-              @click="kiroOAuthProvider = 'github'"
-              :class="kiroProviderClass('github')"
-            >
-              <div
-                :class="[
-                  'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
-                  kiroOAuthProvider === 'github'
-                    ? 'bg-slate-700 text-white dark:bg-slate-500'
-                    : 'bg-gray-100 text-gray-500 dark:bg-dark-600 dark:text-gray-400'
-                ]"
-              >
-                <Icon name="terminal" size="sm" />
-              </div>
-              <div class="min-w-0">
-                <span class="block text-sm font-medium text-gray-900 dark:text-white">
-                  {{ t('admin.accounts.oauth.kiro.githubTitle') }}
-                </span>
-                <span class="text-xs text-gray-500 dark:text-gray-400">
-                  {{ t('admin.accounts.oauth.kiro.githubDesc') }}
-                </span>
-              </div>
-            </button>
-          </div>
+      <div v-if="isKiro && kiroAccountType === 'idc'" class="space-y-4">
+        <div>
+          <label class="input-label">{{ t('admin.accounts.oauth.kiro.startUrlLabel') }}</label>
+          <input
+            v-model="kiroIDCStartUrl"
+            type="text"
+            class="input"
+            :placeholder="t('admin.accounts.oauth.kiro.startUrlPlaceholder')"
+          />
         </div>
-
-        <div v-if="kiroAccountType === 'idc'" class="mt-3 grid gap-3 md:grid-cols-2">
-          <div>
-            <label class="input-label">{{ t('admin.accounts.oauth.kiro.idcStartUrlLabel') }}</label>
-            <input
-              v-model="kiroIDCStartUrl"
-              type="text"
-              class="input"
-              :placeholder="t('admin.accounts.oauth.kiro.startUrlPlaceholder')"
-            />
-          </div>
-          <div>
-            <label class="input-label">{{ t('admin.accounts.oauth.kiro.regionLabel') }}</label>
-            <input
-              v-model="kiroIDCRegion"
-              type="text"
-              class="input"
-              :placeholder="t('admin.accounts.oauth.kiro.regionPlaceholder')"
-            />
-          </div>
+        <div>
+          <label class="input-label">{{ t('admin.accounts.oauth.kiro.regionLabel') }}</label>
+          <input
+            v-model="kiroIDCRegion"
+            type="text"
+            class="input"
+            :placeholder="t('admin.accounts.oauth.kiro.regionPlaceholder')"
+          />
         </div>
+      </div>
 
-        <div v-if="isKiroImportMode" class="mt-3 space-y-3">
-          <div>
-            <label class="input-label">{{ t('admin.accounts.oauth.kiro.tokenJsonLabel') }}</label>
-            <textarea
-              v-model="kiroTokenJson"
-              rows="7"
-              class="input font-mono text-xs"
-              placeholder='{"accessToken":"...","refreshToken":"..."}'
-            />
-            <p class="input-hint">{{ t('admin.accounts.oauth.kiro.tokenJsonHint') }}</p>
-          </div>
-          <div>
-            <label class="input-label">{{ t('admin.accounts.oauth.kiro.deviceRegistrationLabel') }}</label>
-            <textarea
-              v-model="kiroDeviceRegistrationJson"
-              rows="4"
-              class="input font-mono text-xs"
-              placeholder='{"clientId":"...","clientSecret":"..."}'
-            />
-          </div>
+      <div v-if="isKiroImportMode" class="space-y-3">
+        <div>
+          <label class="input-label">{{ t('admin.accounts.oauth.kiro.tokenJsonLabel') }}</label>
+          <textarea
+            v-model="kiroTokenJson"
+            rows="7"
+            class="input font-mono text-xs"
+            placeholder='{"accessToken":"...","refreshToken":"..."}'
+          />
+          <p class="input-hint">{{ t('admin.accounts.oauth.kiro.tokenJsonHint') }}</p>
+        </div>
+        <div>
+          <label class="input-label">{{ t('admin.accounts.oauth.kiro.deviceRegistrationLabel') }}</label>
+          <textarea
+            v-model="kiroDeviceRegistrationJson"
+            rows="4"
+            class="input font-mono text-xs"
+            placeholder='{"clientId":"...","clientSecret":"..."}'
+          />
         </div>
       </div>
 
@@ -437,7 +423,6 @@ const currentAuthUrl = computed(() => {
   if (isGemini.value) return geminiOAuth.authUrl.value
   if (isKiro.value) return kiroOAuth.authUrl.value
   if (isAntigravity.value) return antigravityOAuth.authUrl.value
-  if (isGrok.value) return grokOAuth.authUrl.value
   return claudeOAuth.authUrl.value
 })
 
@@ -446,7 +431,6 @@ const currentSessionId = computed(() => {
   if (isGemini.value) return geminiOAuth.sessionId.value
   if (isKiro.value) return kiroOAuth.sessionId.value
   if (isAntigravity.value) return antigravityOAuth.sessionId.value
-  if (isGrok.value) return grokOAuth.sessionId.value
   return claudeOAuth.sessionId.value
 })
 
@@ -455,7 +439,6 @@ const currentLoading = computed(() => {
   if (isGemini.value) return geminiOAuth.loading.value
   if (isKiro.value) return kiroOAuth.loading.value
   if (isAntigravity.value) return antigravityOAuth.loading.value
-  if (isGrok.value) return grokOAuth.loading.value
   return claudeOAuth.loading.value
 })
 
@@ -464,7 +447,6 @@ const currentError = computed(() => {
   if (isGemini.value) return geminiOAuth.error.value
   if (isKiro.value) return kiroOAuth.error.value
   if (isAntigravity.value) return antigravityOAuth.error.value
-  if (isGrok.value) return grokOAuth.error.value
   return claudeOAuth.error.value
 })
 
@@ -532,32 +514,6 @@ const resetState = () => {
   kiroOAuth.resetState()
   oauthFlowRef.value?.reset()
 }
-
-const kiroModeClass = (mode: typeof kiroAccountType.value) => [
-  'flex items-center gap-3 rounded-lg border-2 p-3 text-left transition-all',
-  kiroAccountType.value === mode
-    ? mode === 'idc'
-      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-      : mode === 'import'
-        ? 'border-slate-500 bg-slate-50 dark:bg-slate-900/20'
-        : 'border-amber-500 bg-amber-50 dark:bg-amber-900/20'
-    : mode === 'idc'
-      ? 'border-gray-200 hover:border-blue-300 dark:border-dark-600 dark:hover:border-blue-700'
-      : mode === 'import'
-        ? 'border-gray-200 hover:border-slate-300 dark:border-dark-600 dark:hover:border-slate-700'
-        : 'border-gray-200 hover:border-amber-300 dark:border-dark-600 dark:hover:border-amber-700'
-]
-
-const kiroProviderClass = (provider: typeof kiroOAuthProvider.value) => [
-  'flex items-center gap-3 rounded-lg border-2 p-3 text-left transition-all',
-  kiroOAuthProvider.value === provider
-    ? provider === 'github'
-      ? 'border-slate-500 bg-slate-50 dark:bg-slate-900/20'
-      : 'border-amber-500 bg-amber-50 dark:bg-amber-900/20'
-    : provider === 'github'
-      ? 'border-amber-200 hover:border-slate-300 dark:border-amber-700/40 dark:hover:border-slate-700'
-      : 'border-amber-200 hover:border-amber-300 dark:border-amber-700/40 dark:hover:border-amber-600'
-]
 
 const handleClose = () => {
   emit('close')

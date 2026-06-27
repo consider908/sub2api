@@ -494,7 +494,7 @@ const routes: RouteRecordRaw[] = [
     redirect: '/admin/accounts/anthropic'
   },
   {
-    path: '/admin/accounts/:platform(anthropic|openai|gemini|antigravity|kiro)',
+    path: '/admin/accounts/:platform(anthropic|openai|gemini|antigravity|kiro|grok)',
     name: 'AdminAccounts',
     component: () => import('@/views/admin/AccountsView.vue'),
     meta: {

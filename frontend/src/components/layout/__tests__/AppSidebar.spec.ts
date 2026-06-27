@@ -41,5 +41,7 @@ describe('AppSidebar account platform navigation', () => {
     expect(componentSource).toContain("{ path: '/admin/accounts/openai', label: 'OpenAI', icon: platformNavIcon('openai') }")
     expect(componentSource).toContain("{ path: '/admin/accounts/gemini', label: 'Gemini', icon: platformNavIcon('gemini') }")
     expect(componentSource).toContain("{ path: '/admin/accounts/antigravity', label: 'Antigravity', icon: platformNavIcon('antigravity') }")
+    expect(componentSource).toContain("{ path: '/admin/accounts/kiro', label: 'Kiro', icon: platformNavIcon('kiro') }")
+    expect(componentSource).toContain("{ path: '/admin/accounts/grok', label: 'Grok', icon: platformNavIcon('grok') }")
   })
 })
