@@ -53,15 +53,12 @@ const (
 	providerAnthropicPath = "/v1/messages"
 	// providerGeminiPathTemplate Gemini generateContent 路径模板（含 model 占位）。
 	providerGeminiPathTemplate = "/v1beta/models/%s:generateContent"
-	// providerKiroPath Kiro 通过本服务/兼容服务的 Anthropic Messages 入口检测。
-	providerKiroPath = "/v1/messages"
 
-	// MonitorProviderOpenAI / Anthropic / Gemini / Grok / Kiro provider 字符串常量（也是 ent enum 的实际值）。
+	// MonitorProviderOpenAI / Anthropic / Gemini / Grok provider 字符串常量（也是 ent enum 的实际值）。
 	MonitorProviderOpenAI    = "openai"
 	MonitorProviderAnthropic = "anthropic"
 	MonitorProviderGemini    = "gemini"
 	MonitorProviderGrok      = "grok"
-	MonitorProviderKiro      = "kiro"
 
 	// MonitorStatusOperational 等监控状态字符串常量（与 ent enum 一致）。
 	MonitorStatusOperational = "operational"
@@ -116,7 +113,7 @@ var (
 		"CHANNEL_MONITOR_NOT_FOUND", "channel monitor not found",
 	)
 	ErrChannelMonitorInvalidProvider = infraerrors.BadRequest(
-		"CHANNEL_MONITOR_INVALID_PROVIDER", "provider must be one of openai/anthropic/gemini/grok/kiro",
+		"CHANNEL_MONITOR_INVALID_PROVIDER", "provider must be one of openai/anthropic/gemini/grok",
 	)
 	ErrChannelMonitorInvalidAPIMode = infraerrors.BadRequest(
 		"CHANNEL_MONITOR_INVALID_API_MODE", "api_mode must be chat_completions or responses; responses is only supported for openai",

@@ -9,9 +9,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestValidateProvider_AllowsGrokAndKiro(t *testing.T) {
+func TestValidateProvider_AllowsGrokRejectsKiro(t *testing.T) {
 	require.NoError(t, validateProvider(MonitorProviderGrok))
-	require.NoError(t, validateProvider(MonitorProviderKiro))
+	require.ErrorIs(t, validateProvider("kiro"), ErrChannelMonitorInvalidProvider)
 }
 
 func TestRunCheckForModel_GrokUsesOpenAICompatibleChatAdapter(t *testing.T) {
