@@ -465,7 +465,7 @@ const route = useRoute()
 const appStore = useAppStore()
 const authStore = useAuthStore()
 
-const ACCOUNT_PLATFORMS = ['anthropic', 'openai', 'gemini', 'antigravity', 'kiro'] as const
+const ACCOUNT_PLATFORMS = ['anthropic', 'openai', 'gemini', 'antigravity', 'kiro', 'grok'] as const
 const isAccountPlatform = (value: unknown): value is AccountPlatform =>
   typeof value === 'string' && ACCOUNT_PLATFORMS.includes(value as AccountPlatform)
 const currentPlatform = computed<AccountPlatform>(() => {

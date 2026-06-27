@@ -3015,6 +3015,7 @@
         @validate-mobile-refresh-token="handleOpenAIValidateMobileRT"
         @validate-session-token="handleValidateSessionToken"
         @import-codex-session="handleOpenAIImportCodexSession"
+        @import-codex-pat="handleOpenAIImportCodexPAT"
         @update:input-method="oauthInputMethod = $event"
       >
         <template v-if="showKiroIDCRefreshTokenFields" #refresh-token-extra>
