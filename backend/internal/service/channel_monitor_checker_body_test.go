@@ -25,14 +25,17 @@ func swapMonitorHTTPClient(t *testing.T) {
 
 // captureHandler 把每次收到的请求 body 和 headers 存起来，测试断言用。
 type captureHandler struct {
-	lastBody    map[string]any
-	lastHeaders http.Header
-	respondText string // 写到 Anthropic content[0].text 里（校验用）
-	status      int
+	lastBody            map[string]any
+	lastHeaders         http.Header
+	lastPath            string
+	respondText         string // 写到 Anthropic content[0].text 里（校验用）
+	autoAnswerChallenge bool
+	status              int
 }
 
 func (h *captureHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.lastHeaders = r.Header.Clone()
+	h.lastPath = r.URL.Path
 	defer func() { _ = r.Body.Close() }()
 	var parsed map[string]any
 	_ = json.NewDecoder(r.Body).Decode(&parsed)
@@ -43,10 +46,14 @@ func (h *captureHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(h.status)
+	text := h.respondText
+	if text == "" && h.autoAnswerChallenge {
+		text = answerFromAnthropicRequest(parsed)
+	}
 	// 构造 Anthropic 格式的响应：content[0].text = h.respondText
 	_ = json.NewEncoder(w).Encode(map[string]any{
 		"content": []map[string]any{
-			{"type": "text", "text": h.respondText},
+			{"type": "text", "text": text},
 		},
 	})
 }
@@ -128,6 +135,16 @@ func answerFromOpenAIRequest(body map[string]any) string {
 	return answerFromChallengePrompt(prompt)
 }
 
+func answerFromAnthropicRequest(body map[string]any) string {
+	prompt := ""
+	if messages, ok := body["messages"].([]any); ok && len(messages) > 0 {
+		if msg, ok := messages[0].(map[string]any); ok {
+			prompt, _ = msg["content"].(string)
+		}
+	}
+	return answerFromChallengePrompt(prompt)
+}
+
 var challengeQuestionRegex = regexp.MustCompile(`Q: (\d+) ([+-]) (\d+) = \?\nA:$`)
 
 func answerFromChallengePrompt(prompt string) string {
@@ -158,6 +175,43 @@ func TestRunCheckForModel_OffMode_PreservesDefaultBody(t *testing.T) {
 	}
 	if h.lastHeaders.Get("x-api-key") != "sk-fake" {
 		t.Errorf("expected adapter's x-api-key header, got %q", h.lastHeaders.Get("x-api-key"))
+	}
+}
+
+func TestRunCheckForModel_KiroUsesLocalMessagesAdapter(t *testing.T) {
+	h := &captureHandler{autoAnswerChallenge: true}
+	endpoint := setupFakeAnthropic(t, h)
+
+	res := runCheckForModel(context.Background(), MonitorProviderKiro, endpoint, "sk-local-kiro", "claude-sonnet-4-6", nil)
+
+	if res.Status != MonitorStatusOperational {
+		t.Fatalf("kiro messages request should pass challenge, got status=%s message=%q", res.Status, res.Message)
+	}
+	if h.lastPath != providerKiroPath {
+		t.Fatalf("expected kiro messages path %q, got %q", providerKiroPath, h.lastPath)
+	}
+	if h.lastHeaders.Get("x-api-key") != "sk-local-kiro" {
+		t.Errorf("expected local api key in x-api-key header, got %q", h.lastHeaders.Get("x-api-key"))
+	}
+	if h.lastHeaders.Get("Authorization") != "" {
+		t.Errorf("kiro local monitor must not use bearer authorization, got %q", h.lastHeaders.Get("Authorization"))
+	}
+	if h.lastBody["model"] != "claude-sonnet-4-6" {
+		t.Errorf("kiro body should contain selected model, got %v", h.lastBody["model"])
+	}
+	if h.lastBody["max_tokens"] != float64(monitorChallengeMaxTokens) {
+		t.Errorf("kiro body should contain max_tokens=%d, got %v", monitorChallengeMaxTokens, h.lastBody["max_tokens"])
+	}
+	msgs, _ := h.lastBody["messages"].([]any)
+	if len(msgs) != 1 {
+		t.Fatalf("kiro body should contain one challenge message, got %v", h.lastBody["messages"])
+	}
+	msg, _ := msgs[0].(map[string]any)
+	if msg["role"] != "user" {
+		t.Errorf("kiro challenge message should be user role, got %v", msg["role"])
+	}
+	if !strings.Contains(stringFromAny(msg["content"]), "Q: ") {
+		t.Errorf("kiro challenge message should contain generated challenge, got %v", msg["content"])
 	}
 }
 
@@ -311,6 +365,39 @@ func TestRunCheckForModel_MergeMode_UserFieldsWinButDenyListProtects(t *testing.
 	}
 	// Content-Length 黑名单：会被 net/http 自动重算，但不应由用户的 "999" 决定。
 	// 我们无法直接断言丢弃（http.Client 总会填上），只断言请求成功即可。
+}
+
+func TestRunCheckForModel_KiroMergeModeDenyListProtectsModelAndMessages(t *testing.T) {
+	h := &captureHandler{autoAnswerChallenge: true}
+	endpoint := setupFakeAnthropic(t, h)
+
+	opts := &CheckOptions{
+		BodyOverrideMode: MonitorBodyOverrideModeMerge,
+		BodyOverride: map[string]any{
+			"system":     "Kiro health check",
+			"max_tokens": float64(7),
+			"model":      "hacked-model",
+			"messages":   []any{},
+		},
+	}
+	res := runCheckForModel(context.Background(), MonitorProviderKiro, endpoint, "sk-local-kiro", "claude-sonnet-4-6", opts)
+
+	if res.Status != MonitorStatusOperational {
+		t.Fatalf("kiro merge request should pass challenge, got status=%s message=%q", res.Status, res.Message)
+	}
+	if h.lastBody["system"] != "Kiro health check" {
+		t.Errorf("kiro merge should allow non-protected fields, got system=%v", h.lastBody["system"])
+	}
+	if h.lastBody["max_tokens"] != float64(7) {
+		t.Errorf("kiro merge should allow max_tokens override, got %v", h.lastBody["max_tokens"])
+	}
+	if h.lastBody["model"] != "claude-sonnet-4-6" {
+		t.Errorf("kiro merge should protect model, got %v", h.lastBody["model"])
+	}
+	msgs, _ := h.lastBody["messages"].([]any)
+	if len(msgs) == 0 {
+		t.Error("kiro merge should protect messages and keep default challenge")
+	}
 }
 
 func TestRunCheckForModel_ReplaceMode_FullBodyUsedAndChallengeSkipped(t *testing.T) {

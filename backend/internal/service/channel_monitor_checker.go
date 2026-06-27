@@ -169,6 +169,21 @@ var providerAdapters = map[string]providerAdapter{
 	MonitorProviderOpenAI: providerOpenAIChatAdapter,
 	// Grok uses the xAI OpenAI-compatible chat/completions protocol for monitor checks.
 	MonitorProviderGrok: providerOpenAIChatAdapter,
+	// Kiro monitor checks target this service's Anthropic-compatible /v1/messages entrypoint.
+	MonitorProviderKiro: {
+		buildPath: func(string) string { return providerKiroPath },
+		buildBody: func(model, prompt string) ([]byte, error) {
+			return json.Marshal(map[string]any{
+				"model":      model,
+				"messages":   []map[string]string{{"role": "user", "content": prompt}},
+				"max_tokens": monitorChallengeMaxTokens,
+			})
+		},
+		buildHeaders: func(apiKey string) map[string]string {
+			return map[string]string{"x-api-key": apiKey}
+		},
+		textPath: "content.0.text",
+	},
 	MonitorProviderAnthropic: {
 		buildPath: func(string) string { return providerAnthropicPath },
 		buildBody: func(model, prompt string) ([]byte, error) {
@@ -410,6 +425,7 @@ var bodyMergeKeyDenyList = map[string]map[string]bool{
 	MonitorProviderOpenAI + ":" + MonitorAPIModeChatCompletions: {"model": true, "messages": true, "stream": true},
 	MonitorProviderOpenAI + ":" + MonitorAPIModeResponses:       {"model": true, "instructions": true, "input": true, "stream": true},
 	MonitorProviderAnthropic:                                    {"model": true, "messages": true},
+	MonitorProviderKiro:                                         {"model": true, "messages": true},
 	MonitorProviderGemini:                                       {"contents": true},
 }
 
