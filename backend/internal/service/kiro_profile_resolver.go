@@ -13,8 +13,8 @@ import (
 	kiropkg "github.com/Wei-Shaw/sub2api/internal/pkg/kiro"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 	"github.com/google/uuid"
-	"golang.org/x/sync/singleflight"
 	"go.uber.org/zap"
+	"golang.org/x/sync/singleflight"
 )
 
 type kiroAvailableProfile struct {
