@@ -13,7 +13,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/pkg/claude"
 )
 
-func TestAccountTestService_KiroAPIKeyUsesGenericAnthropicCompatiblePath(t *testing.T) {
+func TestAccountTestService_KiroAPIKeyWithBaseURLUsesGenericAnthropicCompatiblePath(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	ctx, _ := newTestContext()
 
@@ -56,29 +56,42 @@ func TestAccountTestService_KiroAPIKeyUsesGenericAnthropicCompatiblePath(t *test
 	require.Equal(t, claude.APIKeyBetaHeader, req.Header.Get("anthropic-beta"))
 }
 
-func TestAccountTestService_KiroAPIKeyWithoutBaseURLErrors(t *testing.T) {
+func TestAccountTestService_KiroAPIKeyWithoutBaseURLDirectsToAWSQ(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	ctx, _ := newTestContext()
 
 	account := &Account{
 		ID:          20,
-		Name:        "kiro-apikey-missing-base-url",
+		Name:        "kiro-apikey-direct",
 		Platform:    PlatformKiro,
 		Type:        AccountTypeAPIKey,
 		Concurrency: 1,
 		Credentials: map[string]any{
-			"api_key": "kiro-api-key",
+			"api_key":    "kiro-api-key",
+			"api_region": "us-west-2",
 		},
 	}
 	repo := &mockAccountRepoForGemini{accountsByID: map[int64]*Account{account.ID: account}}
+	upstream := &queuedHTTPUpstream{
+		responses: []*http.Response{
+			newEventStreamResponse(http.StatusOK, "event: message_stop\ndata: {\"type\":\"message_stop\"}\n\n"),
+		},
+	}
 	svc := &AccountTestService{
 		accountRepo:         repo,
-		httpUpstream:        &queuedHTTPUpstream{},
+		httpUpstream:        upstream,
 		cfg:                 &config.Config{Security: config.SecurityConfig{URLAllowlist: config.URLAllowlistConfig{Enabled: false}}},
 		tlsFPProfileService: &TLSFingerprintProfileService{},
 	}
 
 	err := svc.TestAccountConnection(ctx, account.ID, "claude-sonnet-4-6", "", AccountTestModeDefault)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "Base URL")
+	require.NoError(t, err)
+	require.Len(t, upstream.requests, 1)
+	req := upstream.requests[0]
+	require.Equal(t, "q.us-west-2.amazonaws.com", req.URL.Host)
+	require.Equal(t, "/generateAssistantResponse", req.URL.Path)
+	require.Equal(t, "Bearer kiro-api-key", req.Header.Get("Authorization"))
+	require.Equal(t, []string{"API_KEY"}, req.Header["tokentype"])
+	require.Empty(t, req.Header.Get("x-api-key"))
+	require.Empty(t, req.Header.Get("x-amzn-kiro-profile-arn"))
 }

@@ -277,6 +277,7 @@
             <AccountTodayStatsCell
               :stats="todayStatsByAccountId[String(row.id)] ?? null"
               :platform="row.platform"
+              :account="row"
               :kiro-credit-unit-price-usd="Number(row.extra?.kiro_credit_unit_price_usd ?? 0)"
               :loading="todayStatsLoading"
               :error="todayStatsError"

@@ -196,7 +196,7 @@ func (s *AccountTestService) TestAccountConnection(c *gin.Context, accountID int
 		return s.routeAntigravityTest(c, account, modelID, prompt)
 	}
 
-	if account.IsKiro() && account.Type == AccountTypeOAuth {
+	if isKiroDirectModeAccount(account) {
 		return s.testKiroAccountConnection(c, account, modelID)
 	}
 
@@ -248,9 +248,6 @@ func (s *AccountTestService) testClaudeAccountConnection(c *gin.Context, account
 		}
 
 		baseURL := account.GetBaseURL()
-		if baseURL == "" && account.Platform == PlatformKiro {
-			return s.sendErrorAndEnd(c, "Kiro API Key accounts require a Base URL")
-		}
 		if baseURL == "" {
 			baseURL = "https://api.anthropic.com"
 		}
@@ -410,17 +407,25 @@ func (s *AccountTestService) testKiroAccountConnection(c *gin.Context, account *
 		testModelID = mappedModel
 	}
 
-	if account.Type != AccountTypeOAuth {
+	if !isKiroDirectModeAccount(account) {
 		return s.sendErrorAndEnd(c, fmt.Sprintf("Unsupported Kiro account type: %s", account.Type))
 	}
 
-	if s.kiroTokenProvider == nil {
-		return s.sendErrorAndEnd(c, "Kiro token provider not configured")
-	}
-
-	accessToken, err := s.kiroTokenProvider.GetAccessToken(ctx, account)
-	if err != nil {
-		return s.sendErrorAndEnd(c, fmt.Sprintf("Failed to get Kiro access token: %s", err.Error()))
+	var accessToken string
+	var err error
+	if account.Type == AccountTypeAPIKey {
+		accessToken = firstKiroCredential(account, "api_key", "kiro_api_key", "kiroApiKey")
+		if accessToken == "" {
+			return s.sendErrorAndEnd(c, "No API key available")
+		}
+	} else {
+		if s.kiroTokenProvider == nil {
+			return s.sendErrorAndEnd(c, "Kiro token provider not configured")
+		}
+		accessToken, err = s.kiroTokenProvider.GetAccessToken(ctx, account)
+		if err != nil {
+			return s.sendErrorAndEnd(c, fmt.Sprintf("Failed to get Kiro access token: %s", err.Error()))
+		}
 	}
 
 	c.Writer.Header().Set("Content-Type", "text/event-stream")
@@ -469,7 +474,7 @@ func formatKiroTestError(statusCode int, body []byte, requestedModel string, acc
 func (s *AccountTestService) executeKiroTestUpstream(ctx context.Context, account *Account, anthropicBody []byte, mappedModel, token string) (*http.Response, error) {
 	modelID := kiropkg.MapModel(mappedModel)
 	currentToken := token
-	profileArn := resolveKiroPayloadProfileArn(account)
+	profileArn := ""
 	preparedBody := prepareKiroPayloadBodyForRequestModel(anthropicBody, mappedModel)
 	buildResult, err := kiropkg.BuildKiroPayloadWithContext(preparedBody, modelID, profileArn, "AI_EDITOR", nil)
 	if err != nil {
@@ -509,7 +514,7 @@ func (s *AccountTestService) executeKiroTestUpstream(ctx context.Context, accoun
 					return nil, readErr
 				}
 
-				if s.kiroTokenProvider != nil && (resp.StatusCode == http.StatusUnauthorized || isKiroTokenErrorBody(respBody)) && attempt < maxRetries {
+				if account.Type == AccountTypeOAuth && s.kiroTokenProvider != nil && (resp.StatusCode == http.StatusUnauthorized || isKiroTokenErrorBody(respBody)) && attempt < maxRetries {
 					refreshedToken, refreshErr := s.kiroTokenProvider.ForceRefreshAccessToken(ctx, account)
 					if refreshErr == nil && strings.TrimSpace(refreshedToken) != "" {
 						currentToken = refreshedToken

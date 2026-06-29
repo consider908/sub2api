@@ -159,8 +159,11 @@ func (s *GatewayService) forwardKiroMessages(ctx context.Context, c *gin.Context
 	if err != nil {
 		return nil, err
 	}
-	if tokenType != "oauth" {
-		return nil, fmt.Errorf("kiro requires oauth token, got %s", tokenType)
+	if tokenType != "oauth" && tokenType != "apikey" {
+		return nil, fmt.Errorf("kiro requires oauth or apikey token, got %s", tokenType)
+	}
+	if tokenType == "oauth" {
+		s.ensureKiroProfileArnForRequest(ctx, account, token, kiroEndpointModeForRequest(parsed))
 	}
 	if isOnlyWebSearchToolInBody(body) {
 		webSearchResult, webSearchErr := s.executeKiroWebSearch(ctx, account, parsed.Group, body, mappedModel, originalModel, token, c.Request.Header)
@@ -278,8 +281,11 @@ func (s *GatewayService) openKiroAnthropicStreamResponse(ctx context.Context, ac
 	if err != nil {
 		return nil, 0, err
 	}
-	if tokenType != "oauth" {
-		return nil, 0, fmt.Errorf("kiro requires oauth token, got %s", tokenType)
+	if tokenType != "oauth" && tokenType != "apikey" {
+		return nil, 0, fmt.Errorf("kiro requires oauth or apikey token, got %s", tokenType)
+	}
+	if tokenType == "oauth" {
+		s.ensureKiroProfileArnForRequest(ctx, account, token, kiroEndpointModeForRequest(parsed))
 	}
 
 	inputTokens := estimateKiroInputTokens(anthropicBody)
@@ -357,6 +363,10 @@ func (s *GatewayService) executeKiroUpstreamWithParsed(ctx context.Context, acco
 
 	modelID := kiropkg.MapModel(mappedModel)
 	currentToken := token
+	mode := kiroEndpointModeForRequest(parsed)
+	if isKiroDirectApiKeyAccount(account) {
+		mode = KiroEndpointModeQ
+	}
 	buildResult, err := s.buildKiroPayloadForAccount(ctx, account, parsed, anthropicBody, modelID, currentToken, requestModel, headers)
 	if err != nil {
 		return nil, requestCtx, err
@@ -365,7 +375,7 @@ func (s *GatewayService) executeKiroUpstreamWithParsed(ctx context.Context, acco
 	requestCtx = buildResult.Context
 	logKiroStatelessReplay(account, buildResult.Payload)
 
-	endpoints := buildKiroEndpoints(account, kiroEndpointModeForRequest(parsed))
+	endpoints := buildKiroEndpoints(account, mode)
 	proxyURL := kiroProxyURL(account)
 	tlsProfile := s.tlsFPProfileService.ResolveTLSProfile(account)
 	accountKey := buildKiroAccountKey(account)

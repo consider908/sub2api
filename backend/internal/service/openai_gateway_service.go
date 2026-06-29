@@ -212,12 +212,13 @@ func (s *OpenAICodexUsageSnapshot) Normalize() *NormalizedCodexLimits {
 
 // OpenAIUsage represents OpenAI API response usage
 type OpenAIUsage struct {
-	InputTokens              int `json:"input_tokens"`
-	ImageInputTokens         int `json:"image_input_tokens,omitempty"`
-	OutputTokens             int `json:"output_tokens"`
-	CacheCreationInputTokens int `json:"cache_creation_input_tokens,omitempty"`
-	CacheReadInputTokens     int `json:"cache_read_input_tokens,omitempty"`
-	ImageOutputTokens        int `json:"image_output_tokens,omitempty"`
+	InputTokens              int     `json:"input_tokens"`
+	ImageInputTokens         int     `json:"image_input_tokens,omitempty"`
+	OutputTokens             int     `json:"output_tokens"`
+	CacheCreationInputTokens int     `json:"cache_creation_input_tokens,omitempty"`
+	CacheReadInputTokens     int     `json:"cache_read_input_tokens,omitempty"`
+	ImageOutputTokens        int     `json:"image_output_tokens,omitempty"`
+	KiroCredits              float64 `json:"-"`
 }
 
 // OpenAIForwardResult represents the result of forwarding
@@ -5429,7 +5430,10 @@ func extractOpenAIUsageFromJSONBytes(body []byte) (OpenAIUsage, bool) {
 	if usage, ok := openAIUsageFromGJSON(gjson.GetBytes(body, "usage")); ok {
 		return usage, true
 	}
-	return openAIUsageFromGJSON(gjson.GetBytes(body, "response.usage"))
+	if usage, ok := openAIUsageFromGJSON(gjson.GetBytes(body, "response.usage")); ok {
+		return usage, true
+	}
+	return openAIUsageFromGJSON(gjson.GetBytes(body, "message.usage"))
 }
 
 func extractOpenAIResponseIDFromJSONBytes(body []byte) string {
@@ -5485,7 +5489,59 @@ func openAIUsageFromGJSON(value gjson.Result) (OpenAIUsage, bool) {
 		CacheCreationInputTokens: int(value.Get("cache_creation_input_tokens").Int()),
 		CacheReadInputTokens:     int(cacheReadTokens),
 		ImageOutputTokens:        int(imageOutputTokens),
+		KiroCredits:              kiroCreditsFromUsageGJSON(value),
 	}, true
+}
+
+func kiroCreditsFromUsageGJSON(value gjson.Result) float64 {
+	if !value.Exists() {
+		return 0
+	}
+	for _, path := range []string{
+		"_sub2api_kiro_credits",
+		"kiro_credits",
+		"kiroCredits",
+		"credits",
+		"creditsUsed",
+		"creditUsage",
+		"consumedCredits",
+	} {
+		candidate := value.Get(path)
+		if !candidate.Exists() {
+			continue
+		}
+		if parsed := candidate.Float(); parsed > 0 {
+			return parsed
+		}
+	}
+	return 0
+}
+
+func stripInternalKiroCreditsJSONBytes(body []byte) []byte {
+	if len(body) == 0 || !gjson.ValidBytes(body) {
+		return body
+	}
+	updated := body
+	changed := false
+	for _, path := range []string{
+		"usage._sub2api_kiro_credits",
+		"response.usage._sub2api_kiro_credits",
+		"message.usage._sub2api_kiro_credits",
+	} {
+		if !gjson.GetBytes(updated, path).Exists() {
+			continue
+		}
+		next, err := sjson.DeleteBytes(updated, path)
+		if err != nil {
+			continue
+		}
+		updated = next
+		changed = true
+	}
+	if !changed {
+		return body
+	}
+	return updated
 }
 
 func (s *OpenAIGatewayService) handleNonStreamingResponse(ctx context.Context, resp *http.Response, c *gin.Context, account *Account, originalModel, mappedModel string) (*openaiNonStreamingResult, error) {
@@ -5519,6 +5575,7 @@ func (s *OpenAIGatewayService) handleNonStreamingResponse(ctx context.Context, r
 		return nil, fmt.Errorf("parse response: invalid json response")
 	}
 	usage := &usageValue
+	body = stripInternalKiroCreditsJSONBytes(body)
 
 	// Replace model in response if needed
 	if originalModel != mappedModel {
@@ -6314,6 +6371,9 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 		usageLog.RateMultiplier = imageMultiplier
 	} else {
 		usageLog.RateMultiplier = multiplier
+	}
+	if result.Usage.KiroCredits > 0 {
+		usageLog.KiroCredits = &result.Usage.KiroCredits
 	}
 	usageLog.AccountRateMultiplier = &accountRateMultiplier
 	usageLog.BillingType = billingType

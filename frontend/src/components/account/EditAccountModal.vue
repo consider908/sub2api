@@ -28,7 +28,7 @@
 
       <!-- API Key fields (only for apikey type) -->
       <div v-if="account.type === 'apikey'" class="space-y-4">
-        <div>
+        <div v-if="account.platform !== 'kiro' || isKiroRelayAPIKeyAccount">
           <label class="input-label">{{ t('admin.accounts.baseUrl') }}</label>
           <input
             v-model="editBaseUrl"
@@ -2604,6 +2604,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { isKiroRelayAccount } from '@/utils/kiroAccount'
 import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
 import { adminAPI } from '@/api/admin'
@@ -2679,6 +2680,7 @@ const baseUrlHint = computed(() => {
 const antigravityPresetMappings = computed(() => getPresetMappingsByPlatform('antigravity'))
 const bedrockPresets = computed(() => getPresetMappingsByPlatform('bedrock'))
 const isKiroOAuthAccount = computed(() => props.account?.platform === 'kiro' && props.account?.type === 'oauth')
+const isKiroRelayAPIKeyAccount = computed(() => isKiroRelayAccount(props.account as any))
 
 // Model mapping type
 interface ModelMapping {
@@ -4020,21 +4022,29 @@ const handleSubmit = async () => {
     // For apikey type, handle credentials update
     if (props.account.type === 'apikey') {
       const currentCredentials = (props.account.credentials as Record<string, unknown>) || {}
-      const newBaseUrl = props.account.platform === 'kiro'
-        ? editBaseUrl.value.trim()
-        : (editBaseUrl.value.trim() || defaultBaseUrl.value)
-      const shouldApplyModelMapping = !(props.account.platform === 'openai' && openaiPassthroughEnabled.value)
+        const newBaseUrl = props.account.platform === 'kiro'
+          ? editBaseUrl.value.trim()
+          : (editBaseUrl.value.trim() || defaultBaseUrl.value)
+        const shouldApplyModelMapping = !(props.account.platform === 'openai' && openaiPassthroughEnabled.value)
 
-      if (!newBaseUrl) {
-        appStore.showError(t('admin.accounts.upstream.pleaseEnterBaseUrl'))
-        return
-      }
+        if (props.account.platform !== 'kiro' && !newBaseUrl) {
+          appStore.showError(t('admin.accounts.upstream.pleaseEnterBaseUrl'))
+          return
+        }
+        if (props.account.platform === 'kiro' && isKiroRelayAPIKeyAccount.value && !newBaseUrl) {
+          appStore.showError(t('admin.accounts.upstream.pleaseEnterBaseUrl'))
+          return
+        }
 
-      // Always update credentials for apikey type to handle model mapping changes
-      const newCredentials: Record<string, unknown> = {
-        ...currentCredentials,
-        base_url: newBaseUrl
-      }
+        // Always update credentials for apikey type to handle model mapping changes
+        const newCredentials: Record<string, unknown> = {
+          ...currentCredentials
+        }
+        if (props.account.platform !== 'kiro' || isKiroRelayAPIKeyAccount.value) {
+          newCredentials.base_url = newBaseUrl
+        } else {
+          delete newCredentials.base_url
+        }
 
       // Handle API key
       // 后端响应已脱敏：currentCredentials 不会再包含 api_key 原文。

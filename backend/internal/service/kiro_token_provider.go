@@ -55,6 +55,13 @@ func (p *KiroTokenProvider) GetAccessToken(ctx context.Context, account *Account
 	if account == nil {
 		return "", errors.New("account is nil")
 	}
+	if account.Platform == PlatformKiro && account.Type == AccountTypeAPIKey {
+		token := strings.TrimSpace(firstKiroCredential(account, "api_key", "kiro_api_key", "kiroApiKey"))
+		if token == "" {
+			return "", errors.New("api_key not found in credentials")
+		}
+		return token, nil
+	}
 	if account.Platform != PlatformKiro || account.Type != AccountTypeOAuth {
 		return "", errors.New("not a kiro oauth account")
 	}

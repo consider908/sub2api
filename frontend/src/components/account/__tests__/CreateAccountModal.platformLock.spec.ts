@@ -23,11 +23,10 @@ describe('CreateAccountModal platform lock', () => {
     expect(componentSource).not.toContain("@click=\"form.platform = 'antigravity'\"")
   })
 
-  it('keeps Kiro account creation fixed to OAuth authorization methods', () => {
-    expect(componentSource).not.toContain('<!-- Kiro account type selection -->')
-    expect(componentSource).not.toContain("form.platform === 'kiro' && accountCategory === 'apikey'")
-    expect(componentSource).not.toContain("{{ t('admin.accounts.types.kiroApikey') }}")
-    expect(componentSource).not.toContain("{{ t('admin.accounts.oauth.kiro.oauthProviderTitle') }}")
+  it('restores Kiro apikey creation alongside OAuth methods', () => {
+    expect(componentSource).toContain("form.platform === 'kiro'")
+    expect(componentSource).toContain("@click=\"accountCategory = 'apikey'\"")
+    expect(componentSource).toContain("{{ t('admin.accounts.types.kiroApikey') }}")
     expect(componentSource).toContain("kiroAuthMethod = 'google'")
     expect(componentSource).toContain("kiroAuthMethod = 'github'")
     expect(componentSource).toContain("kiroAuthMethod = 'idc'")

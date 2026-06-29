@@ -45,6 +45,11 @@ describe('AccountTodayStatsCell', () => {
       props: {
         stats,
         platform: 'kiro',
+        account: {
+          platform: 'kiro',
+          type: 'apikey',
+          credentials: {}
+        },
         kiroCreditUnitPriceUsd: 0.071
       }
     })
@@ -63,6 +68,11 @@ describe('AccountTodayStatsCell', () => {
           kiro_credits: 10
         },
         platform: 'kiro',
+        account: {
+          platform: 'kiro',
+          type: 'apikey',
+          credentials: {}
+        },
         kiroCreditUnitPriceUsd: 0.1
       }
     })
@@ -84,6 +94,11 @@ describe('AccountTodayStatsCell', () => {
           kiro_credits: 10
         },
         platform: 'kiro',
+        account: {
+          platform: 'kiro',
+          type: 'apikey',
+          credentials: {}
+        },
         kiroCreditUnitPriceUsd: 0.1
       }
     })
@@ -96,6 +111,11 @@ describe('AccountTodayStatsCell', () => {
       props: {
         stats,
         platform: 'kiro',
+        account: {
+          platform: 'kiro',
+          type: 'apikey',
+          credentials: {}
+        },
         kiroCreditUnitPriceUsd: 0
       }
     })
@@ -111,6 +131,25 @@ describe('AccountTodayStatsCell', () => {
       props: {
         stats,
         platform: 'openai',
+        kiroCreditUnitPriceUsd: 0.071
+      }
+    })
+
+    expect(wrapper.text()).not.toContain('消费Credits')
+  })
+
+  it('does not show credits for Kiro relay accounts', () => {
+    const wrapper = mount(AccountTodayStatsCell, {
+      props: {
+        stats,
+        platform: 'kiro',
+        account: {
+          platform: 'kiro',
+          type: 'apikey',
+          credentials: {
+            base_url: 'https://relay.example.com'
+          }
+        },
         kiroCreditUnitPriceUsd: 0.071
       }
     })

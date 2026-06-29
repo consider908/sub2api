@@ -4242,7 +4242,7 @@ func (s *GatewayService) GetAccessToken(ctx context.Context, account *Account) (
 		// Both oauth and setup-token use OAuth token flow
 		return s.getOAuthToken(ctx, account)
 	case AccountTypeAPIKey:
-		apiKey := account.GetCredential("api_key")
+		apiKey := firstKiroCredential(account, "api_key", "kiro_api_key", "kiroApiKey")
 		if apiKey == "" {
 			return "", "", errors.New("api_key not found in credentials")
 		}
@@ -5072,7 +5072,7 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 		return s.forwardBedrock(ctx, c, account, parsed, startTime)
 	}
 
-	if account != nil && account.Platform == PlatformKiro && account.Type == AccountTypeOAuth {
+	if account != nil && account.Platform == PlatformKiro && isKiroDirectModeAccount(account) {
 		return s.forwardKiroMessages(ctx, c, account, parsed, startTime)
 	}
 
@@ -6953,15 +6953,14 @@ func (s *GatewayService) buildUpstreamRequest(ctx context.Context, c *gin.Contex
 	targetURL := claudeAPIURL
 	if account.Type == AccountTypeAPIKey {
 		baseURL := account.GetBaseURL()
-		if baseURL == "" && account.Platform == PlatformKiro {
-			return nil, nil, fmt.Errorf("kiro api key account requires base_url")
-		}
 		if baseURL != "" {
 			validatedURL, err := s.validateUpstreamBaseURL(baseURL)
 			if err != nil {
 				return nil, nil, err
 			}
 			targetURL = validatedURL + "/v1/messages?beta=true"
+		} else if account.Platform == PlatformKiro {
+			return nil, nil, fmt.Errorf("kiro direct api key accounts do not use anthropic upstream")
 		}
 	} else if account.IsCustomBaseURLEnabled() {
 		customURL := account.GetCustomBaseURL()
@@ -10248,7 +10247,7 @@ func (s *GatewayService) ForwardCountTokens(ctx context.Context, c *gin.Context,
 		s.countTokensError(c, http.StatusNotFound, "not_found_error", "count_tokens endpoint is not supported for this platform")
 		return nil
 	}
-	if account.Platform == PlatformKiro && account.Type == AccountTypeOAuth {
+	if account.Platform == PlatformKiro && isKiroDirectModeAccount(account) {
 		s.countTokensError(c, http.StatusNotFound, "not_found_error", "Token counting is not supported for this platform")
 		return nil
 	}

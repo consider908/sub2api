@@ -11,6 +11,29 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	kiroBuilderIDProfileARN = "arn:aws:codewhisperer:us-east-1:638616132270:profile/AAAACCCCXXXX"
+	kiroSocialProfileARN    = "arn:aws:codewhisperer:us-east-1:699475941385:profile/EHGA3GRVQMUK"
+)
+
+func kiroIsPlaceholderProfileARN(arn string) bool {
+	return strings.TrimSpace(arn) == kiroBuilderIDProfileARN
+}
+
+func kiroIsSocialLogin(account *Account) bool {
+	if account == nil {
+		return false
+	}
+	return strings.EqualFold(strings.TrimSpace(account.GetCredential("auth_method")), "social")
+}
+
+func kiroDefaultProfileARN(account *Account) string {
+	if kiroIsSocialLogin(account) {
+		return kiroSocialProfileARN
+	}
+	return kiroBuilderIDProfileARN
+}
+
 func buildKiroAccountKey(account *Account) string {
 	if account == nil {
 		return ""
@@ -103,6 +126,30 @@ func kiroProxyURL(account *Account) string {
 	return ""
 }
 
+func isKiroRelayAccount(account *Account) bool {
+	return account != nil &&
+		account.Platform == PlatformKiro &&
+		account.Type == AccountTypeAPIKey &&
+		strings.TrimSpace(account.GetCredential("base_url")) != ""
+}
+
+func isKiroDirectApiKeyAccount(account *Account) bool {
+	return account != nil &&
+		account.Platform == PlatformKiro &&
+		account.Type == AccountTypeAPIKey &&
+		strings.TrimSpace(account.GetCredential("base_url")) == ""
+}
+
+func isKiroDirectModeAccount(account *Account) bool {
+	if account == nil || account.Platform != PlatformKiro {
+		return false
+	}
+	if account.Type == AccountTypeOAuth {
+		return true
+	}
+	return isKiroDirectApiKeyAccount(account)
+}
+
 func kiroAPIRegion(account *Account) string {
 	if account == nil {
 		return kiroDefaultRegion
@@ -118,6 +165,9 @@ func applyKiroConditionalHeaders(req *http.Request, account *Account) {
 	if req == nil || account == nil {
 		return
 	}
+	if account.Type == AccountTypeAPIKey {
+		req.Header["tokentype"] = []string{"API_KEY"}
+	}
 	if strings.EqualFold(strings.TrimSpace(account.GetCredential("auth_method")), "external_idp") {
 		req.Header.Set("TokenType", "EXTERNAL_IDP")
 	}
@@ -131,6 +181,14 @@ func resolveKiroPayloadProfileArn(account *Account) string {
 		return ""
 	}
 	return strings.TrimSpace(account.GetCredential("profile_arn"))
+}
+
+func kiroResolveProfileArnForKRS(account *Account) string {
+	arn := resolveKiroPayloadProfileArn(account)
+	if arn != "" {
+		return arn
+	}
+	return kiroDefaultProfileARN(account)
 }
 
 func newKiroJSONRequest(ctx context.Context, endpointURL string, payload []byte, token, accountKey, machineID, amzTarget string, account *Account) (*http.Request, error) {
@@ -154,8 +212,8 @@ func newKiroJSONRequest(ctx context.Context, endpointURL string, payload []byte,
 	if amzTarget != "" {
 		req.Header.Set("X-Amz-Target", amzTarget)
 	}
-	if account != nil {
-		profileArn := strings.TrimSpace(account.GetCredential("profile_arn"))
+	if account != nil && endpointURL == kiroKRSEndpointURL {
+		profileArn := kiroResolveProfileArnForKRS(account)
 		if profileArn != "" {
 			req.Header.Set("x-amzn-kiro-profile-arn", profileArn)
 		}

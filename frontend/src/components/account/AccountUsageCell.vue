@@ -630,6 +630,13 @@
           >
             U ${{ formatKeyUserCost }}
           </span>
+          <span
+            v-if="props.account.platform === 'kiro' && !isKiroRelayAPIKey"
+            class="rounded bg-amber-50 px-1.5 py-0.5 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+            :title="t('admin.accounts.stats.kiroCredits')"
+          >
+            K {{ Number(todayStats.kiro_credits ?? 0).toLocaleString(undefined, { maximumFractionDigits: 2 }) }}
+          </span>
         </div>
       </div>
       <!-- Loading skeleton for today stats -->
@@ -678,6 +685,7 @@ import type { Account, AccountUsageInfo, GeminiCredentials, WindowStats } from '
 import { buildOpenAIUsageRefreshKey } from '@/utils/accountUsageRefresh'
 import { enqueueUsageRequest } from '@/utils/usageLoadQueue'
 import { formatCompactNumber, formatRelativeTime } from '@/utils/format'
+import { isKiroRelayAccount } from '@/utils/kiroAccount'
 import UsageProgressBar from './UsageProgressBar.vue'
 import AccountQuotaInfo from './AccountQuotaInfo.vue'
 import OpenAIQuotaResetCell from './OpenAIQuotaResetCell.vue'
@@ -1270,6 +1278,8 @@ const isAnthropicOAuthOrSetupToken = computed(() => {
 const isKiroOAuth = computed(() => {
   return props.account.platform === 'kiro' && props.account.type === 'oauth'
 })
+
+const isKiroRelayAPIKey = computed(() => isKiroRelayAccount(props.account))
 
 const defaultUsageSource = computed<'passive' | 'active' | undefined>(() => {
   if (isAnthropicOAuthOrSetupToken.value || isKiroOAuth.value) {

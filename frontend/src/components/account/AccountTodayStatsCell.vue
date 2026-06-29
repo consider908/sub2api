@@ -72,11 +72,13 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { WindowStats } from '@/types'
 import { formatNumber, formatCurrency } from '@/utils/format'
+import { isKiroRelayAccount } from '@/utils/kiroAccount'
 
 const props = withDefaults(
   defineProps<{
     stats?: WindowStats | null
     platform?: string | null
+    account?: { platform?: string | null; type?: string | null; credentials?: Record<string, unknown> | null } | null
     kiroCreditUnitPriceUsd?: number | null
     loading?: boolean
     error?: string | null
@@ -84,6 +86,7 @@ const props = withDefaults(
   {
     stats: null,
     platform: null,
+    account: null,
     kiroCreditUnitPriceUsd: null,
     loading: false,
     error: null
@@ -92,7 +95,10 @@ const props = withDefaults(
 
 const { t } = useI18n()
 
-const showKiroCredits = computed(() => props.platform === 'kiro')
+const showKiroCredits = computed(() => {
+  if (props.platform !== 'kiro') return false
+  return !isKiroRelayAccount(props.account as any)
+})
 
 const kiroCreditEstimatedCostValue = computed(() => {
   if (!showKiroCredits.value) return null

@@ -115,6 +115,33 @@ func TestRecordCyberPolicyUsageLog_NonStreamZeroTokensZeroCost(t *testing.T) {
 	require.Equal(t, RequestTypeCyberBlocked, usageRepo.lastLog.RequestType)
 }
 
+func TestOpenAIGatewayServiceRecordUsage_PersistsKiroCredits(t *testing.T) {
+	usageRepo := &openAIRecordUsageLogRepoStub{inserted: true}
+	userRepo := &openAIRecordUsageUserRepoStub{}
+	subRepo := &openAIRecordUsageSubRepoStub{}
+	svc := newOpenAIRecordUsageServiceForTest(usageRepo, userRepo, subRepo, nil)
+
+	err := svc.RecordUsage(context.Background(), &OpenAIRecordUsageInput{
+		Result: &OpenAIForwardResult{
+			RequestID: "rid-kiro-credits",
+			Model:     "gpt-5",
+			Usage: OpenAIUsage{
+				InputTokens:  10,
+				OutputTokens: 20,
+				KiroCredits:  1.75,
+			},
+		},
+		APIKey:  &APIKey{ID: 2, User: &User{ID: 1}},
+		User:    &User{ID: 1},
+		Account: &Account{ID: 3, Platform: PlatformOpenAI},
+	})
+
+	require.NoError(t, err)
+	require.NotNil(t, usageRepo.lastLog)
+	require.NotNil(t, usageRepo.lastLog.KiroCredits)
+	require.InDelta(t, 1.75, *usageRepo.lastLog.KiroCredits, 1e-12)
+}
+
 func TestRecordCyberPolicyUsageLog_SkipsWhenIncomplete(t *testing.T) {
 	usageRepo := &openAIRecordUsageLogRepoStub{}
 	svc := newOpenAIRecordUsageServiceForTest(usageRepo, &openAIRecordUsageUserRepoStub{}, &openAIRecordUsageSubRepoStub{}, nil)

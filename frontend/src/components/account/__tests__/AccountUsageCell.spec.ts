@@ -164,6 +164,67 @@ describe('AccountUsageCell', () => {
     expect(wrapper.text()).toContain('25')
   })
 
+  it('Kiro direct apikey shows today credit badge', async () => {
+    const wrapper = mount(AccountUsageCell, {
+      props: {
+        account: makeAccount({
+          id: 1003,
+          platform: 'kiro',
+          type: 'apikey',
+          credentials: {
+            api_key: 'ksk-direct'
+          }
+        }),
+        todayStats: {
+          requests: 3,
+          tokens: 1200,
+          cost: 0,
+          user_cost: 0,
+          kiro_credits: 1.25
+        }
+      },
+      global: {
+        stubs: {
+          UsageProgressBar: true,
+          AccountQuotaInfo: true
+        }
+      }
+    })
+
+    expect(wrapper.text()).toContain('K 1.25')
+  })
+
+  it('Kiro relay apikey hides today credit badge', async () => {
+    const wrapper = mount(AccountUsageCell, {
+      props: {
+        account: makeAccount({
+          id: 1004,
+          platform: 'kiro',
+          type: 'apikey',
+          credentials: {
+            api_key: 'ksk-relay',
+            base_url: 'https://relay.example.com'
+          }
+        }),
+        todayStats: {
+          requests: 3,
+          tokens: 1200,
+          cost: 0,
+          user_cost: 0,
+          kiro_credits: 1.25
+        }
+      },
+      global: {
+        stubs: {
+          UsageProgressBar: true,
+          AccountQuotaInfo: true
+        }
+      }
+    })
+
+    expect(wrapper.text()).not.toContain('K 1.25')
+  })
+
 
   it('OpenAI OAuth 快照已过期时首屏会重新请求 usage', async () => {
     getUsage.mockResolvedValue({

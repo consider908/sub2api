@@ -371,7 +371,7 @@ func (s *AccountUsageService) SetKiroTokenProvider(provider *KiroTokenProvider) 
 // GetUsage 获取账号使用量
 // OAuth账号: 调用Anthropic API获取真实数据（需要profile scope），API响应缓存10分钟，窗口统计缓存1分钟
 // Setup Token账号: 根据session_window推算5h窗口，7d数据不可用（没有profile scope）
-// API Key账号: 不支持usage查询
+// API Key账号: 默认不支持usage查询；Kiro 直连 API Key 例外
 func (s *AccountUsageService) GetUsage(ctx context.Context, accountID int64, force ...bool) (*UsageInfo, error) {
 	forceProbe := len(force) > 0 && force[0]
 
@@ -396,7 +396,7 @@ func (s *AccountUsageService) GetUsage(ctx context.Context, accountID int64, for
 		return usage, err
 	}
 
-	if account.Platform == PlatformKiro && account.Type == AccountTypeOAuth {
+	if account.Platform == PlatformKiro && isKiroDirectModeAccount(account) {
 		return s.getKiroUsage(ctx, account, "active", false)
 	}
 

@@ -715,95 +715,117 @@
         </div>
       </div>
 
-      <!-- Kiro OAuth auth mode selection -->
-      <div v-if="form.platform === 'kiro' && accountCategory === 'oauth-based'">
+      <!-- Kiro auth mode selection -->
+      <div v-if="form.platform === 'kiro'">
         <label class="input-label">{{ t('admin.accounts.oauth.kiro.authModeTitle') }}</label>
-        <div class="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="mt-2 grid grid-cols-2 gap-2 lg:grid-cols-5" data-tour="account-form-type">
           <button
             type="button"
-            @click="kiroAuthMethod = 'google'"
+            @click="accountCategory = 'oauth-based'; kiroAuthMethod = 'google'"
             :class="[
-              'flex items-center gap-3 rounded-lg border-2 p-3 text-left transition-all',
-              kiroAuthMethod === 'google'
+              'flex items-center gap-2 rounded-lg border-2 px-2.5 py-2 text-left transition-all',
+              accountCategory === 'oauth-based' && kiroAuthMethod === 'google'
                 ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20'
                 : 'border-gray-200 hover:border-amber-300 dark:border-dark-600 dark:hover:border-amber-700'
             ]"
           >
-            <div :class="['flex h-8 w-8 shrink-0 items-center justify-center rounded-lg', kiroAuthMethod === 'google' ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-500 dark:bg-dark-600 dark:text-gray-400']">
-              <Icon name="user" size="sm" />
+            <div
+              :class="[
+                'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg',
+                accountCategory === 'oauth-based' && kiroAuthMethod === 'google'
+                  ? 'bg-amber-500 text-white'
+                  : 'bg-gray-100 text-gray-500 dark:bg-dark-600 dark:text-gray-400'
+              ]"
+            >
+              <Icon name="user" size="xs" />
             </div>
             <div class="min-w-0 flex-1">
-              <span class="block truncate text-sm font-medium text-gray-900 dark:text-white">
+              <span class="block truncate text-xs font-medium text-gray-900 dark:text-white">
                 {{ t('admin.accounts.oauth.kiro.googleTitle') }}
-              </span>
-              <span class="block truncate text-xs text-gray-500 dark:text-gray-400">
-                {{ t('admin.accounts.oauth.kiro.googleDesc') }}
               </span>
             </div>
           </button>
+
           <button
             type="button"
-            @click="kiroAuthMethod = 'github'"
+            @click="accountCategory = 'oauth-based'; kiroAuthMethod = 'github'"
             :class="[
-              'flex items-center gap-3 rounded-lg border-2 p-3 text-left transition-all',
-              kiroAuthMethod === 'github'
+              'flex items-center gap-2 rounded-lg border-2 px-2.5 py-2 text-left transition-all',
+              accountCategory === 'oauth-based' && kiroAuthMethod === 'github'
                 ? 'border-slate-500 bg-slate-50 dark:bg-slate-900/20'
                 : 'border-gray-200 hover:border-slate-300 dark:border-dark-600 dark:hover:border-slate-700'
             ]"
           >
-            <div :class="['flex h-8 w-8 shrink-0 items-center justify-center rounded-lg', kiroAuthMethod === 'github' ? 'bg-slate-700 text-white dark:bg-slate-500' : 'bg-gray-100 text-gray-500 dark:bg-dark-600 dark:text-gray-400']">
-              <Icon name="terminal" size="sm" />
+            <div
+              :class="[
+                'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg',
+                accountCategory === 'oauth-based' && kiroAuthMethod === 'github'
+                  ? 'bg-slate-700 text-white dark:bg-slate-500'
+                  : 'bg-gray-100 text-gray-500 dark:bg-dark-600 dark:text-gray-400'
+              ]"
+            >
+              <Icon name="terminal" size="xs" />
             </div>
             <div class="min-w-0 flex-1">
-              <span class="block truncate text-sm font-medium text-gray-900 dark:text-white">
+              <span class="block truncate text-xs font-medium text-gray-900 dark:text-white">
                 {{ t('admin.accounts.oauth.kiro.githubTitle') }}
-              </span>
-              <span class="block truncate text-xs text-gray-500 dark:text-gray-400">
-                {{ t('admin.accounts.oauth.kiro.githubDesc') }}
               </span>
             </div>
           </button>
           <button
             type="button"
-            @click="kiroAuthMethod = 'idc'"
+            @click="accountCategory = 'oauth-based'; kiroAuthMethod = 'idc'"
             :class="[
-              'flex items-center gap-3 rounded-lg border-2 p-3 text-left transition-all',
-              kiroAuthMethod === 'idc'
+              'flex items-center gap-2 rounded-lg border-2 px-2.5 py-2 text-left transition-all',
+              accountCategory === 'oauth-based' && kiroAuthMethod === 'idc'
                 ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                 : 'border-gray-200 hover:border-blue-300 dark:border-dark-600 dark:hover:border-blue-700'
             ]"
           >
-            <div :class="['flex h-8 w-8 shrink-0 items-center justify-center rounded-lg', kiroAuthMethod === 'idc' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-500 dark:bg-dark-600 dark:text-gray-400']">
-              <Icon name="cloud" size="sm" />
+            <div :class="['flex h-7 w-7 shrink-0 items-center justify-center rounded-lg', accountCategory === 'oauth-based' && kiroAuthMethod === 'idc' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-500 dark:bg-dark-600 dark:text-gray-400']">
+              <Icon name="cloud" size="xs" />
             </div>
             <div class="min-w-0 flex-1">
-              <span class="block truncate text-sm font-medium text-gray-900 dark:text-white">
+              <span class="block truncate text-xs font-medium text-gray-900 dark:text-white">
                 {{ t('admin.accounts.oauth.kiro.idcTitle') }}
-              </span>
-              <span class="block truncate text-xs text-gray-500 dark:text-gray-400">
-                {{ t('admin.accounts.oauth.kiro.idcSubtitle') }}
               </span>
             </div>
           </button>
           <button
             type="button"
-            @click="kiroAuthMethod = 'import'"
+            @click="accountCategory = 'oauth-based'; kiroAuthMethod = 'import'"
             :class="[
-              'flex items-center gap-3 rounded-lg border-2 p-3 text-left transition-all',
-              kiroAuthMethod === 'import'
+              'flex items-center gap-2 rounded-lg border-2 px-2.5 py-2 text-left transition-all',
+              accountCategory === 'oauth-based' && kiroAuthMethod === 'import'
                 ? 'border-slate-500 bg-slate-50 dark:bg-slate-900/20'
                 : 'border-gray-200 hover:border-slate-300 dark:border-dark-600 dark:hover:border-slate-700'
             ]"
           >
-            <div :class="['flex h-8 w-8 shrink-0 items-center justify-center rounded-lg', kiroAuthMethod === 'import' ? 'bg-slate-700 text-white dark:bg-slate-500' : 'bg-gray-100 text-gray-500 dark:bg-dark-600 dark:text-gray-400']">
-              <Icon name="download" size="sm" />
+            <div :class="['flex h-7 w-7 shrink-0 items-center justify-center rounded-lg', accountCategory === 'oauth-based' && kiroAuthMethod === 'import' ? 'bg-slate-700 text-white dark:bg-slate-500' : 'bg-gray-100 text-gray-500 dark:bg-dark-600 dark:text-gray-400']">
+              <Icon name="download" size="xs" />
             </div>
             <div class="min-w-0 flex-1">
-              <span class="block truncate text-sm font-medium text-gray-900 dark:text-white">
+              <span class="block truncate text-xs font-medium text-gray-900 dark:text-white">
                 {{ t('admin.accounts.oauth.kiro.importTitle') }}
               </span>
-              <span class="block truncate text-xs text-gray-500 dark:text-gray-400">
-                {{ t('admin.accounts.oauth.kiro.importSubtitle') }}
+            </div>
+          </button>
+          <button
+            type="button"
+            @click="accountCategory = 'apikey'"
+            :class="[
+              'flex items-center gap-2 rounded-lg border-2 px-2.5 py-2 text-left transition-all',
+              accountCategory === 'apikey'
+                ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                : 'border-gray-200 hover:border-purple-300 dark:border-dark-600 dark:hover:border-purple-700'
+            ]"
+          >
+            <div :class="['flex h-7 w-7 shrink-0 items-center justify-center rounded-lg', accountCategory === 'apikey' ? 'bg-purple-500 text-white' : 'bg-gray-100 text-gray-500 dark:bg-dark-600 dark:text-gray-400']">
+              <Icon name="key" size="xs" />
+            </div>
+            <div class="min-w-0 flex-1">
+              <span class="block truncate text-xs font-medium text-gray-900 dark:text-white">
+                {{ t('admin.accounts.types.kiroApikey') }}
               </span>
             </div>
           </button>
@@ -898,6 +920,30 @@
               + {{ preset.label }}
             </button>
           </div>
+        </div>
+      </div>
+
+      <div v-if="form.platform === 'kiro' && accountCategory === 'apikey'" class="space-y-4">
+        <div>
+          <label class="input-label">{{ t('admin.accounts.baseUrl') }}</label>
+          <input
+            v-model="apiKeyBaseUrl"
+            type="text"
+            class="input"
+            placeholder="https://your-kiro-upstream.example.com"
+          />
+          <p class="input-hint">{{ t('admin.accounts.types.kiroApikey') }}</p>
+        </div>
+        <div>
+          <label class="input-label">{{ t('admin.accounts.apiKeyRequired') }}</label>
+          <input
+            v-model="apiKeyValue"
+            type="password"
+            required
+            class="input font-mono"
+            placeholder="ksk-..."
+          />
+          <p class="input-hint">{{ apiKeyHint }}</p>
         </div>
       </div>
 
@@ -3975,7 +4021,7 @@ const form = reactive({
 // Helper to check if current type needs OAuth flow
 const isOAuthFlow = computed(() => {
   if (form.platform === 'kiro') {
-    return true
+    return accountCategory.value === 'oauth-based'
   }
   // Antigravity upstream 类型不需要 OAuth 流程
   if (form.platform === 'antigravity' && antigravityAccountType.value === 'upstream') {
@@ -4079,7 +4125,7 @@ watch(
       return
     }
     if (form.platform === 'kiro') {
-      form.type = 'oauth'
+      form.type = category === 'oauth-based' ? 'oauth' : 'apikey'
       return
     }
     // Bedrock 类型
@@ -4127,7 +4173,6 @@ watch(
       fetchKiroDefaultMappings().then(mappings => {
         kiroModelMappings.value = [...mappings]
       })
-      accountCategory.value = 'oauth-based'
       kiroAuthMethod.value = 'google'
       apiKeyBaseUrl.value = ''
       apiKeyValue.value = ''
@@ -4153,7 +4198,7 @@ watch(
     if (newPlatform !== 'anthropic' && accountCategory.value === 'bedrock') {
       accountCategory.value = 'oauth-based'
     }
-    if (newPlatform === 'kiro' && accountCategory.value !== 'oauth-based') {
+    if (newPlatform === 'kiro' && accountCategory.value !== 'oauth-based' && accountCategory.value !== 'apikey') {
       accountCategory.value = 'oauth-based'
     }
     // Reset Bedrock fields when switching platforms
@@ -4997,6 +5042,33 @@ const handleSubmit = async () => {
     return
   }
 
+  // For Kiro apikey type, Base URL is optional:
+  // empty => direct AWS; non-empty => external relay fallback.
+  if (form.platform === 'kiro' && accountCategory.value === 'apikey') {
+    if (!form.name.trim()) {
+      appStore.showError(t('admin.accounts.pleaseEnterAccountName'))
+      return
+    }
+    if (!apiKeyValue.value.trim()) {
+      appStore.showError(t('admin.accounts.pleaseEnterApiKey'))
+      return
+    }
+    const credentials: Record<string, unknown> = {
+      api_key: apiKeyValue.value.trim()
+    }
+    if (apiKeyBaseUrl.value.trim()) {
+      credentials.base_url = apiKeyBaseUrl.value.trim()
+    }
+    const modelMapping = buildModelMappingObject('mapping', [], kiroModelMappings.value)
+    if (modelMapping) {
+      credentials.model_mapping = modelMapping
+    }
+
+    applyInterceptWarmup(credentials, interceptWarmupRequests.value, 'create')
+    await createAccountAndFinish('kiro', 'apikey', credentials, {})
+    return
+  }
+
   // For apikey type, create directly
   if (!apiKeyValue.value.trim()) {
     appStore.showError(t('admin.accounts.pleaseEnterApiKey'))
@@ -5138,6 +5210,9 @@ const createAccountAndFinish = async (
 ) => {
   if (!applyTempUnschedConfig(credentials)) {
     return
+  }
+  if (platform === 'kiro' && type === 'apikey' && form.priority === 1) {
+    form.priority = 100
   }
   // Inject quota limits for apikey/bedrock accounts
   let finalExtra = extra

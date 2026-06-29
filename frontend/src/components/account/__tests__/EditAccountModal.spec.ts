@@ -193,6 +193,57 @@ function buildKiroOAuthAccount() {
   } as any
 }
 
+function buildKiroRelayAccount() {
+  return {
+    id: 4,
+    name: 'Kiro Relay',
+    notes: '',
+    platform: 'kiro',
+    type: 'apikey',
+    credentials: {
+      api_key: 'ksk-test',
+      base_url: 'https://relay.example.com',
+      model_mapping: {
+        'claude-sonnet-4-6': 'claude-sonnet-4-6'
+      }
+    },
+    extra: {},
+    proxy_id: null,
+    concurrency: 1,
+    priority: 100,
+    rate_multiplier: 1,
+    status: 'active',
+    group_ids: [],
+    expires_at: null,
+    auto_pause_on_expired: false
+  } as any
+}
+
+function buildAntigravityAccount(projectID = '') {
+  return {
+    id: 5,
+    name: 'Antigravity OAuth',
+    notes: '',
+    platform: 'antigravity',
+    type: 'oauth',
+    credentials: {
+      model_mapping: {
+        'gemini-2.5-pro': 'gemini-2.5-pro'
+      },
+      ...(projectID ? { antigravity_project_id: projectID } : {})
+    },
+    extra: {},
+    proxy_id: null,
+    concurrency: 1,
+    priority: 1,
+    rate_multiplier: 1,
+    status: 'active',
+    group_ids: [],
+    expires_at: null,
+    auto_pause_on_expired: false
+  } as any
+}
+
 function mountModal(account = buildAccount()) {
   return mount(EditAccountModal, {
     props: {
@@ -505,6 +556,27 @@ describe('EditAccountModal', () => {
 
     expect(updateAccountMock).toHaveBeenCalledTimes(1)
     expect(updateAccountMock.mock.calls[0]?.[1]?.extra?.kiro_credit_unit_price_usd).toBe(0.08)
+  })
+
+  it('allows editing Kiro relay base_url and preserves apikey type', async () => {
+    const account = buildKiroRelayAccount()
+    updateAccountMock.mockReset()
+    checkMixedChannelRiskMock.mockReset()
+    checkMixedChannelRiskMock.mockResolvedValue({ has_risk: false })
+    updateAccountMock.mockResolvedValue(account)
+
+    const wrapper = mountModal(account)
+    const baseUrlInput = wrapper.findAll<HTMLInputElement>('input.input').find(
+      (input) => input.attributes('placeholder') === 'https://your-kiro-upstream.example.com'
+    )
+    expect(baseUrlInput).toBeTruthy()
+    expect(baseUrlInput!.element.value).toBe('https://relay.example.com')
+
+    await baseUrlInput!.setValue('https://relay-backup.example.com')
+    await wrapper.get('form#edit-account-form').trigger('submit.prevent')
+
+    expect(updateAccountMock).toHaveBeenCalledTimes(1)
+    expect(updateAccountMock.mock.calls[0]?.[1]?.credentials?.base_url).toBe('https://relay-backup.example.com')
   })
 
   it('allows saving apikey account when backend redacted api_key but credentials_status reports it exists', async () => {

@@ -92,7 +92,7 @@ func (s *AccountUsageService) getKiroUsage(ctx context.Context, account *Account
 			ErrorCode: errorCodeNetworkError,
 		}, nil
 	}
-	if account.Platform != PlatformKiro || account.Type != AccountTypeOAuth {
+	if account.Platform != PlatformKiro || !isKiroDirectModeAccount(account) {
 		return &UsageInfo{
 			Source:    source,
 			UpdatedAt: &now,
@@ -165,6 +165,9 @@ func (s *AccountUsageService) fetchAndCacheKiroUsage(ctx context.Context, accoun
 
 	region := kiroAPIRegion(account)
 	profileArn := strings.TrimSpace(account.GetCredential("profile_arn"))
+	if account.Type == AccountTypeAPIKey {
+		profileArn = ""
+	}
 
 	resp, err := s.requestKiroUsageLimits(ctx, account, region, profileArn, token)
 	if err != nil {
@@ -191,6 +194,13 @@ func (s *AccountUsageService) fetchAndCacheKiroUsage(ctx context.Context, accoun
 }
 
 func (s *AccountUsageService) getKiroUsageAccessToken(ctx context.Context, account *Account) (string, error) {
+	if account != nil && account.Platform == PlatformKiro && account.Type == AccountTypeAPIKey {
+		token := strings.TrimSpace(firstKiroCredential(account, "api_key", "kiro_api_key", "kiroApiKey"))
+		if token == "" {
+			return "", fmt.Errorf("no api key available")
+		}
+		return token, nil
+	}
 	if s != nil && s.kiroTokenProvider != nil {
 		return s.kiroTokenProvider.GetAccessToken(ctx, account)
 	}
@@ -585,7 +595,7 @@ func (s *AccountUsageService) attachKiroRuntimeState(ctx context.Context, accoun
 }
 
 func (s *AccountUsageService) EnrichAccountWithKiroRuntimeState(ctx context.Context, account *Account) {
-	if s == nil || account == nil || account.Platform != PlatformKiro || account.Type != AccountTypeOAuth {
+	if s == nil || account == nil || account.Platform != PlatformKiro || !isKiroDirectModeAccount(account) {
 		return
 	}
 	account.KiroQuotaState = ""
