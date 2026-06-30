@@ -550,24 +550,21 @@ func parseVersion(v string) ([4]int, bool) {
 }
 
 func parseProductVersion(v string) (string, [4]int, bool) {
-	v = strings.TrimSpace(strings.TrimPrefix(v, "v"))
+	v = strings.TrimSpace(v)
 	result := [4]int{0, 0, 0, 0}
 	if v == "" {
 		return "", result, false
 	}
 
 	var rawParts []string
-	if base, local, ok := strings.Cut(v, "-local."); ok {
+	if base, local, ok := strings.Cut(v, "-"); ok {
 		baseParts := strings.Split(base, ".")
 		if len(baseParts) != 3 {
 			return "", result, false
 		}
 		rawParts = append(baseParts, local)
 	} else {
-		rawParts = strings.Split(v, ".")
-		if len(rawParts) != 3 && len(rawParts) != 4 {
-			return "", result, false
-		}
+		return "", result, false
 	}
 
 	for i, part := range rawParts {
@@ -582,15 +579,8 @@ func parseProductVersion(v string) (string, [4]int, bool) {
 		strconv.Itoa(result[0]),
 		strconv.Itoa(result[1]),
 		strconv.Itoa(result[2]),
-		strconv.Itoa(result[3]),
 	}, ".")
-	if len(rawParts) == 3 {
-		normalized = strings.Join([]string{
-			strconv.Itoa(result[0]),
-			strconv.Itoa(result[1]),
-			strconv.Itoa(result[2]),
-		}, ".")
-	}
+	normalized = normalized + "-" + strconv.Itoa(result[3])
 	return normalized, result, true
 }
 

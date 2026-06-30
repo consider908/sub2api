@@ -54,11 +54,11 @@ func TestUpdateServicePerformUpdateNoUpdateReturnsSentinel(t *testing.T) {
 		&updateServiceCacheStub{},
 		&updateServiceGitHubClientStub{
 			release: &GitHubRelease{
-				TagName: "v0.1.132",
-				Name:    "v0.1.132",
+				TagName: "0.1.132-1",
+				Name:    "0.1.132-1",
 			},
 		},
-		"0.1.132",
+		"0.1.132-1",
 		"release",
 	)
 
@@ -70,15 +70,14 @@ func TestUpdateServicePerformUpdateNoUpdateReturnsSentinel(t *testing.T) {
 }
 
 func TestUpdateServiceVersionComparisonSupportsLocalRevision(t *testing.T) {
-	require.Negative(t, compareVersions("0.1.133.1", "0.1.134.1"))
-	require.Zero(t, compareVersions("0.1.134", "0.1.134.0"))
-	require.Positive(t, compareVersions("0.1.133.2", "0.1.133.1"))
-	require.Positive(t, compareVersions("0.1.134.1", "0.1.133.99"))
+	require.Negative(t, compareVersions("0.1.133-1", "0.1.134-1"))
+	require.Positive(t, compareVersions("0.1.133-2", "0.1.133-1"))
+	require.Positive(t, compareVersions("0.1.134-1", "0.1.133-99"))
 }
 
 func TestUpdateServiceVersionComparisonHandlesInvalidVersions(t *testing.T) {
-	require.Zero(t, compareVersions("0.1.134.1", "bad-version"))
-	require.Negative(t, compareVersions("bad-version", "0.1.134.1"))
+	require.Zero(t, compareVersions("0.1.134-1", "bad-version"))
+	require.Negative(t, compareVersions("bad-version", "0.1.134-1"))
 	require.Zero(t, compareVersions("bad-version", "also-bad"))
 }
 
@@ -91,33 +90,22 @@ func TestParseProductVersionBoundaries(t *testing.T) {
 		ok         bool
 	}{
 		{
-			name:       "upstream three part",
-			version:    "v0.1.134",
-			normalized: "0.1.134",
-			parts:      [4]int{0, 1, 134, 0},
-			ok:         true,
-		},
-		{
-			name:       "product four part",
-			version:    "0.1.134.2",
-			normalized: "0.1.134.2",
-			parts:      [4]int{0, 1, 134, 2},
-			ok:         true,
-		},
-		{
-			name:       "local release tag",
-			version:    "v0.1.134-local.1",
-			normalized: "0.1.134.1",
+			name:       "maintenance release tag",
+			version:    "0.1.134-1",
+			normalized: "0.1.134-1",
 			parts:      [4]int{0, 1, 134, 1},
 			ok:         true,
 		},
 		{name: "empty", version: "", ok: false},
+		{name: "upstream three part", version: "0.1.134", ok: false},
+		{name: "tag with v prefix", version: "v0.1.134-1", ok: false},
 		{name: "two part", version: "0.1", ok: false},
+		{name: "legacy four part", version: "0.1.134.1", ok: false},
 		{name: "five part", version: "0.1.134.1.1", ok: false},
 		{name: "non numeric", version: "0.1.x", ok: false},
-		{name: "missing local revision", version: "v0.1.134-local", ok: false},
-		{name: "non numeric local revision", version: "v0.1.134-local.x", ok: false},
-		{name: "leading zero local revision", version: "v0.1.134-local.01", ok: false},
+		{name: "missing maintenance revision", version: "0.1.134-", ok: false},
+		{name: "non numeric maintenance revision", version: "0.1.134-x", ok: false},
+		{name: "leading zero maintenance revision", version: "0.1.134-01", ok: false},
 	}
 
 	for _, tt := range tests {
@@ -133,46 +121,46 @@ func TestParseProductVersionBoundaries(t *testing.T) {
 	}
 }
 
-func TestUpdateServiceFetchLatestReleaseNormalizesLocalTagAndUsesProjectRepo(t *testing.T) {
+func TestUpdateServiceFetchLatestReleaseNormalizesMaintenanceTagAndUsesProjectRepo(t *testing.T) {
 	client := &updateServiceGitHubClientStub{
 		release: &GitHubRelease{
-			TagName: "v0.1.134-local.1",
-			Name:    "v0.1.134-local.1",
+			TagName: "0.1.134-1",
+			Name:    "0.1.134-1",
 		},
 	}
-	svc := NewUpdateService(&updateServiceCacheStub{}, client, "0.1.133.1", "release")
+	svc := NewUpdateService(&updateServiceCacheStub{}, client, "0.1.133-1", "release")
 
 	info, err := svc.CheckUpdate(context.Background(), true)
 
 	require.NoError(t, err)
 	require.Equal(t, githubRepo, client.repo)
 	require.Equal(t, "consider908/sub2api", client.repo)
-	require.Equal(t, "0.1.133.1", info.CurrentVersion)
-	require.Equal(t, "0.1.134.1", info.LatestVersion)
+	require.Equal(t, "0.1.133-1", info.CurrentVersion)
+	require.Equal(t, "0.1.134-1", info.LatestVersion)
 	require.True(t, info.HasUpdate)
 }
 
 func TestUpdateServiceCheckUpdateWarnsOnInvalidLatestReleaseTag(t *testing.T) {
 	client := &updateServiceGitHubClientStub{
 		release: &GitHubRelease{
-			TagName: "v0.1.134-local.x",
-			Name:    "v0.1.134-local.x",
+			TagName: "0.1.134-x",
+			Name:    "0.1.134-x",
 		},
 	}
-	svc := NewUpdateService(&updateServiceCacheStub{}, client, "0.1.133.1", "release")
+	svc := NewUpdateService(&updateServiceCacheStub{}, client, "0.1.133-1", "release")
 
 	info, err := svc.CheckUpdate(context.Background(), true)
 
 	require.NoError(t, err)
-	require.Equal(t, "0.1.133.1", info.CurrentVersion)
-	require.Equal(t, "0.1.133.1", info.LatestVersion)
+	require.Equal(t, "0.1.133-1", info.CurrentVersion)
+	require.Equal(t, "0.1.133-1", info.LatestVersion)
 	require.False(t, info.HasUpdate)
 	require.Contains(t, info.Warning, "invalid latest release tag")
 }
 
 func TestUpdateServiceCheckUpdateUsesCachedDataWhenLatestReleaseInvalid(t *testing.T) {
 	cache := &updateServiceCacheStub{
-		data: `{"latest":"0.1.134.1","release_info":{"name":"cached"},"timestamp":4102444800}`,
+		data: `{"latest":"0.1.134-1","release_info":{"name":"cached"},"timestamp":4102444800}`,
 	}
 	client := &updateServiceGitHubClientStub{
 		release: &GitHubRelease{
@@ -180,12 +168,12 @@ func TestUpdateServiceCheckUpdateUsesCachedDataWhenLatestReleaseInvalid(t *testi
 			Name:    "invalid",
 		},
 	}
-	svc := NewUpdateService(cache, client, "0.1.133.1", "release")
+	svc := NewUpdateService(cache, client, "0.1.133-1", "release")
 
 	info, err := svc.CheckUpdate(context.Background(), true)
 
 	require.NoError(t, err)
-	require.Equal(t, "0.1.134.1", info.LatestVersion)
+	require.Equal(t, "0.1.134-1", info.LatestVersion)
 	require.True(t, info.HasUpdate)
 	require.True(t, info.Cached)
 	require.Contains(t, info.Warning, "Using cached data")

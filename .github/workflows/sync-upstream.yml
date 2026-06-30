@@ -19,7 +19,7 @@ permissions:
 env:
   UPSTREAM_REPO: https://github.com/Wei-Shaw/sub2api.git
   UPSTREAM_TAG_BASELINE: v0.1.133
-  LOCAL_RELEASE_SUFFIX: local.1
+  LOCAL_RELEASE_REVISION: "1"
 
 jobs:
   sync-branch:
@@ -154,8 +154,8 @@ jobs:
             echo "::error::UPSTREAM_TAG_BASELINE 必须是 vX.Y.Z 格式: ${UPSTREAM_TAG_BASELINE}"
             exit 1
           fi
-          if [[ ! "${LOCAL_RELEASE_SUFFIX}" =~ ^local\.[1-9][0-9]*$ ]]; then
-            echo "::error::LOCAL_RELEASE_SUFFIX 必须是 local.N 格式且 N >= 1: ${LOCAL_RELEASE_SUFFIX}"
+          if [[ ! "${LOCAL_RELEASE_REVISION}" =~ ^[1-9][0-9]*$ ]]; then
+            echo "::error::LOCAL_RELEASE_REVISION 必须是正整数: ${LOCAL_RELEASE_REVISION}"
             exit 1
           fi
 
@@ -175,8 +175,8 @@ jobs:
               continue
             fi
 
-            local_tag="${upstream_tag}-${LOCAL_RELEASE_SUFFIX}"
-            if [[ ! "$local_tag" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)-local\.[1-9][0-9]*$ ]]; then
+            local_tag="${upstream_tag#v}-${LOCAL_RELEASE_REVISION}"
+            if [[ ! "$local_tag" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)-[1-9][0-9]*$ ]]; then
               echo "::error::生成的本项目维护 tag 非法: $local_tag"
               exit 1
             fi

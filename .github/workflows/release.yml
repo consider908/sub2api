@@ -3,11 +3,11 @@ name: Release
 on:
   push:
     tags:
-      - 'v*-local.*'
+      - '*.*.*-*'
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag to release (e.g., v0.1.134-local.1)'
+        description: 'Tag to release (e.g., 0.1.140-2)'
         required: true
         type: string
       simple_release:
@@ -42,10 +42,10 @@ jobs:
             TAG_NAME="${GITHUB_REF#refs/tags/}"
           fi
 
-          if [[ "$TAG_NAME" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)-local\.(0|[1-9][0-9]*)$ ]]; then
-            PRODUCT_VERSION="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}.${BASH_REMATCH[4]}"
+          if [[ "$TAG_NAME" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)-([1-9][0-9]*)$ ]]; then
+            PRODUCT_VERSION="${TAG_NAME}"
           else
-            echo "::error::Invalid release tag: ${TAG_NAME}. Expected vX.Y.Z-local.N"
+            echo "::error::Invalid release tag: ${TAG_NAME}. Expected X.Y.Z-N"
             exit 1
           fi
 
@@ -233,7 +233,7 @@ jobs:
           fi
 
           TAG_NAME="${{ needs.validate_release_tag.outputs.tag_name }}"
-          RELEASE_VERSION=${TAG_NAME#v}
+          RELEASE_VERSION=${TAG_NAME}
           PRODUCT_VERSION="${{ needs.validate_release_tag.outputs.product_version }}"
           REPO="${{ github.repository }}"
           GHCR_IMAGE="ghcr.io/${REPO,,}"  # ${,,} converts to lowercase

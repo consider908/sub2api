@@ -502,25 +502,18 @@ normalize_release_tag() {
         return
     fi
 
-    if [[ "$version" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-        version="${version#v}"
-        local base="${version%.*}"
-        local local_revision="${version##*.}"
-        echo "v${base}-local.${local_revision}"
+    if [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*$ ]]; then
+        echo "$version"
         return
     fi
 
-    if [[ ! "$version" =~ ^v ]]; then
-        version="v$version"
-    fi
     echo "$version"
 }
 
 normalize_product_version() {
     local version="$1"
-    version="${version#v}"
-    if [[ "$version" =~ ^([0-9]+\.[0-9]+\.[0-9]+)-local\.([0-9]+)$ ]]; then
-        echo "${BASH_REMATCH[1]}.${BASH_REMATCH[2]}"
+    if [[ "$version" =~ ^([0-9]+\.[0-9]+\.[0-9]+)-([0-9]+)$ ]]; then
+        echo "$version"
         return
     fi
     echo "$version"
@@ -588,7 +581,7 @@ validate_version() {
 get_current_version() {
     if [ -f "$INSTALL_DIR/sub2api" ]; then
         # Use grep -E for better compatibility (works on macOS and Linux)
-        "$INSTALL_DIR/sub2api" --version 2>/dev/null | grep -oE 'v?[0-9]+\.[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1 || echo "unknown"
+        "$INSTALL_DIR/sub2api" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+-[0-9]+' | head -1 || echo "unknown"
     else
         echo "not_installed"
     fi
@@ -596,7 +589,7 @@ get_current_version() {
 
 # Download and extract
 download_and_extract() {
-    local version_num=${LATEST_VERSION#v}
+    local version_num=${LATEST_VERSION}
     local archive_name="sub2api_${version_num}_${OS}_${ARCH}.tar.gz"
     local download_url="https://github.com/${GITHUB_REPO}/releases/download/${LATEST_VERSION}/${archive_name}"
     local checksum_url="https://github.com/${GITHUB_REPO}/releases/download/${LATEST_VERSION}/checksums.txt"
@@ -844,7 +837,7 @@ upgrade() {
     print_info "$(msg 'upgrading')"
 
     # Get current version
-    CURRENT_VERSION=$("$INSTALL_DIR/sub2api" --version 2>/dev/null | grep -oE 'v?[0-9]+\.[0-9]+\.[0-9]+(\.[0-9]+)?' || echo "unknown")
+    CURRENT_VERSION=$("$INSTALL_DIR/sub2api" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+-[0-9]+' || echo "unknown")
     print_info "$(msg 'current_version'): $CURRENT_VERSION"
 
     # Stop service
@@ -896,7 +889,7 @@ install_version() {
     # Check if same version
     local target_product_version
     target_product_version=$(normalize_product_version "$target_version")
-    if [ "$current_version" = "$target_version" ] || [ "$current_version" = "${target_version#v}" ] || [ "$current_version" = "$target_product_version" ]; then
+    if [ "$current_version" = "$target_version" ] || [ "$current_version" = "$target_product_version" ]; then
         print_warning "$(msg 'same_version')"
         exit 0
     fi
@@ -1164,10 +1157,10 @@ main() {
             echo ""
             echo "Examples:"
             echo "  $0                        # Install latest version"
-            echo "  $0 install -v v0.1.0      # Install specific version"
+            echo "  $0 install -v 0.1.140-2   # Install specific version"
             echo "  $0 upgrade                # Upgrade to latest"
-            echo "  $0 upgrade -v v0.2.0      # Upgrade to specific version"
-            echo "  $0 rollback v0.1.0        # Rollback to v0.1.0"
+            echo "  $0 upgrade -v 0.1.140-2   # Upgrade to specific version"
+            echo "  $0 rollback 0.1.140-2     # Rollback to 0.1.140-2"
             echo "  $0 list-versions          # List available versions"
             echo ""
             exit 0
