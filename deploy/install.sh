@@ -1157,10 +1157,10 @@ main() {
             echo ""
             echo "Examples:"
             echo "  $0                        # Install latest version"
-            echo "  $0 install -v 0.1.140-2   # Install specific version"
+            echo "  $0 install -v 0.1.140-3   # Install specific version"
             echo "  $0 upgrade                # Upgrade to latest"
-            echo "  $0 upgrade -v 0.1.140-2   # Upgrade to specific version"
-            echo "  $0 rollback 0.1.140-2     # Rollback to 0.1.140-2"
+            echo "  $0 upgrade -v 0.1.140-3   # Upgrade to specific version"
+            echo "  $0 rollback 0.1.140-3     # Rollback to 0.1.140-3"
             echo "  $0 list-versions          # List available versions"
             echo ""
             exit 0

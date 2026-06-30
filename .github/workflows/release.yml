@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag to release (e.g., 0.1.140-2)'
+        description: 'Tag to release (e.g., 0.1.140-3)'
         required: true
         type: string
       simple_release:
